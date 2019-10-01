@@ -91,6 +91,7 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Note{})
 }
 
+
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
