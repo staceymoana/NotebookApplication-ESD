@@ -1,13 +1,14 @@
-package project
+package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"time"
 
 	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
+	//_ "github.com/lib/pq"
 )
 
 type Note struct {
@@ -24,7 +25,7 @@ type User struct {
 	FamilyName string `json: familyName`
 }
 
-type NoteAcess struct {
+type NoteAccess struct {
 	NoteAccessID int  `json: noteAccessID`
 	NoteID       int  `json: noteID`
 	UserID       int  `json: userID`
@@ -32,9 +33,16 @@ type NoteAcess struct {
 	Write        bool `json: write`
 }
 
+var notes []Note
+
 func main() {
 	//Router
 	r := mux.NewRouter()
+
+	//mock data
+	notes = append(notes, Note{NoteID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 2, Title: "my note 2", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
+
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
@@ -47,11 +55,12 @@ func main() {
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//json.NewEncoder(w).Encode()
+	json.NewEncoder(w).Encode(notes)
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-Type", "application/json")
+	//json
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
