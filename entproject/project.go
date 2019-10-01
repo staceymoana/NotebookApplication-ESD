@@ -73,10 +73,35 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var newNote Note
+	_ = json.NewDecoder(r.Body).Decode(&newNote)
 
+	newNote.NoteID = rand.Intn(100000)
+	notes = append(notes, newNote)
+	json.NewEncoder(w).Encode(newNote)
 }
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+
+	for index, item := range notes {
+		if strconv.Itoa(item.NoteID) == params["NoteID"] {
+			notes = append(notes[:index], notes[index+1:]...)
+			var newNote Note
+			_ = json.NewDecoder(r.Body).Decode(&newNote)
+
+			newNoteID, err := strconv.Atoi(params["NoteID"])
+			if err == nil {
+				newNote.NoteID = newNoteID
+				notes = append(notes, newNote)
+				json.NewEncoder(w).Encode(newNote)
+			}
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(notes)
 
 }
 
