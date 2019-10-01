@@ -53,6 +53,7 @@ func main() {
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/CreateUser", createUser).Methods("POST")
+	r.HandleFunc("/Users", getUsers).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -60,6 +61,11 @@ func main() {
 func getNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notes)
+}
+
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
