@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -90,6 +91,21 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Note{})
 }
 
+func getUserNotes(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	var userNotes []Note
+
+	for _, item := range notes {
+		if strconv.Itoa(item.UserID) == params["UserID"] {
+			userNotes = append(userNotes, item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(userNotes)
+
+}
+
 func createNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var newNote Note
@@ -150,12 +166,12 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	for index, item := range users {
+	for _, item := range users {
 		if strconv.Itoa(item.UserID) == params["userID"] && item.Password == params["password"] {
 			getUserNotes(w, r)
 			return
 		}
 	}
-	fmt.println("Invalid username or password")
+	fmt.Println("Invalid username or password")
 
 }
