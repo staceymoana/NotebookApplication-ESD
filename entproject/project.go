@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"strconv"
@@ -35,6 +36,7 @@ type NoteAccess struct {
 }
 
 var notes []Note
+var users []User
 
 func main() {
 	//Router
@@ -50,6 +52,7 @@ func main() {
 	r.HandleFunc("/Notes", createNote).Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
+	r.HandleFunc("/CreateUser", createUser).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -118,4 +121,12 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(notes)
 }
 
-//hi
+func createUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var newUser User
+	_ = json.NewDecoder(r.Body).Decode(&newUser)
+
+	newUser.UserID = rand.Intn(100000)
+	users = append(users, newUser)
+	json.NewEncoder(w).Encode(newUser)
+}
