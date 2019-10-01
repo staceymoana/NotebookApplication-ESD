@@ -59,8 +59,10 @@ func main() {
 	r.HandleFunc("/Notes", createNote).Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
-	r.HandleFunc("/CreateUser", createUser).Methods("POST")
+	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
+	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
+	r.HandleFunc("/Users/UserNotes", getUserNotes).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -142,4 +144,18 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	newUser.UserID = rand.Intn(100000)
 	users = append(users, newUser)
 	json.NewEncoder(w).Encode(newUser)
+}
+
+func logIn(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+
+	for index, item := range users {
+		if strconv.Itoa(item.UserID) == params["userID"] && item.Password == params["password"] {
+			getUserNotes(w, r)
+			return
+		}
+	}
+	fmt.println("Invalid username or password")
+
 }
