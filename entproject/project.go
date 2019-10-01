@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -55,12 +56,20 @@ func main() {
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//json.NewEncoder(w).Encode()
+	json.NewEncoder(w).Encode(notes)
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//json
+	params := mux.Vars(r)
+
+	for _, item := range notes {
+		if strconv.Itoa(item.NoteID) == params["NoteID"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Note{})
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +81,16 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
 
+	for index, item := range notes {
+		if strconv.Itoa(item.NoteID) == params["NoteID"] {
+			notes = append(notes[:index], notes[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(notes)
 }
 
 //hi
