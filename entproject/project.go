@@ -55,7 +55,7 @@ func main() {
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notes)
+	//json.NewEncoder(w).Encode()
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
