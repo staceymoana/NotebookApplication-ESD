@@ -15,6 +15,7 @@ import (
 
 type Note struct {
 	NoteID      int       `json: noteID`
+	UserID      int       `json: userID`
 	Title       string    `json: title`
 	Contents    string    `json: contents`
 	DateCreated time.Time `json: dateCreated`
@@ -25,6 +26,8 @@ type User struct {
 	UserID     int    `json: userID`
 	GivenName  string `json: givenName`
 	FamilyName string `json: familyName`
+	Username   string `json: userName`
+	Password   string `json: password`
 }
 
 type NoteAccess struct {
@@ -43,8 +46,12 @@ func main() {
 	r := mux.NewRouter()
 
 	//mock data
-	notes = append(notes, Note{NoteID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
-	notes = append(notes, Note{NoteID: 2, Title: "my note 2", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
+	//mock users
+	users = append(users, User{UserID: 1, GivenName: "John", FamilyName: "Snow", Username: "john.snow", Password: "hello123"})
+	users = append(users, User{UserID: 2, GivenName: "Bob", FamilyName: "Williams", Username: "bobw", Password: "hi"})
+	//mock notes
+	notes = append(notes, Note{NoteID: 1, UserID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 2, UserID: 2, Title: "my note 2", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
