@@ -63,7 +63,6 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
-	r.HandleFunc("/Users/UserNotes", getUserNotes).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -91,15 +90,13 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Note{})
 }
 
-
-func getUserNotes(w http.ResponseWriter, r *http.Request) {
+func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
 	var userNotes []Note
 
-	for _, item := range notes {
-		if strconv.Itoa(item.UserID) == params["UserID"] {
-			userNotes = append(userNotes, item)
+	for index, item := range notes {
+		if item.UserID == user.UserID {
+			userNotes = append(notes[:index], notes[index+1:]...)
 			return
 		}
 	}
@@ -165,11 +162,13 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 func logIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
+	var details User
+	_ = json.NewDecoder(r.Body).Decode(&details)
 
 	for _, item := range users {
-		if strconv.Itoa(item.UserID) == params["userID"] && item.Password == params["password"] {
-			getUserNotes(w, r)
+
+		if item.UserID == details.UserID && item.Password == details.Password {
+			getUserNotes(w, r, item)
 			return
 		}
 	}
