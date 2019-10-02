@@ -197,8 +197,22 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 // 	}
 // 	json.NewEncoder(w).Encode(userNotes)
 // }
+func insertionSort(arr []Note) []Note {
+	for i := 1; i < len(arr); i++ {
+		key := arr[i].Contents
+		ts := arr[i]
+		j := i - 1
+		for j >= 0 && key < arr[j].Contents {
+			arr[j+1] = arr[j]
+			j -= 1
+		}
+		arr[j+1] = ts
+	}
+	return arr
+}
 
 func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+	sortednotes := insertionSort(notes)
 	low := 0
 	high := len(notes) - 1
 	mid := 0
@@ -207,8 +221,8 @@ func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you ar
 	_ = json.NewDecoder(r.Body).Decode(&input)
 
 	for low <= high {
-		mid = low + (high-low)/2 //middle of the list
-		mid_value = notes[mid]   //get item to check if matches with T
+		mid = low + (high-low)/2     //middle of the list
+		mid_value = sortednotes[mid] //get item to check if matches with T
 
 		if mid_value.Contents == input.Contents {
 			json.NewEncoder(w).Encode(mid_value)
