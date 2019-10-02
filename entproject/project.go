@@ -203,18 +203,18 @@ func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you ar
 	high := len(notes) - 1
 	mid := 0
 	var mid_value Note
-	var input string
+	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
 
 	for low <= high {
 		mid = low + (high-low)/2 //middle of the list
 		mid_value = notes[mid]   //get item to check if matches with T
 
-		if mid_value.Contents == input {
+		if mid_value.Contents == input.Contents {
 			json.NewEncoder(w).Encode(mid_value)
 			return //we have matched the target T
 
-		} else if mid_value.Contents < input {
+		} else if mid_value.Contents < input.Contents {
 			low = mid + 1 //left/lower side of the middle
 
 		} else {
