@@ -52,7 +52,8 @@ func main() {
 	users = append(users, User{UserID: 2, GivenName: "Bob", FamilyName: "Williams", Username: "bobw", Password: "hi"})
 	//mock notes
 	notes = append(notes, Note{NoteID: 1, UserID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
-	notes = append(notes, Note{NoteID: 2, UserID: 2, Title: "my note 2", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 2, UserID: 1, Title: "my note 2", Contents: "note2", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 3, UserID: 2, Title: "my note 3", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
@@ -93,14 +94,13 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
 	w.Header().Set("Content-Type", "application/json")
 	var userNotes []Note
-
-	for index, item := range notes {
+	for _, item := range notes {
 		if item.UserID == user.UserID {
-			userNotes = append(notes[:index], notes[index+1:]...)
-			return
+
+			userNotes = append(userNotes, item)
+			json.NewEncoder(w).Encode(userNotes)
 		}
 	}
-	json.NewEncoder(w).Encode(userNotes)
 
 }
 
