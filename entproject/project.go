@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	//_ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 type Note struct {
@@ -41,6 +41,7 @@ type NoteAccess struct {
 
 var notes []Note
 var users []User
+var access []NoteAccess
 
 func main() {
 	//Router
@@ -64,6 +65,7 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
+	r.HandleFunc("/Notes/Search", search).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -98,10 +100,10 @@ func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
 		if item.UserID == user.UserID {
 
 			userNotes = append(userNotes, item)
-			json.NewEncoder(w).Encode(userNotes)
+
 		}
 	}
-
+	json.NewEncoder(w).Encode(userNotes)
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
@@ -174,4 +176,51 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Invalid username or password")
 
+}
+
+// func shareNote(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	var noteAccess NoteAccess
+// 	_ = json.NewDecoder(r.Body).Decode(&noteAccess)
+
+// 	access.append(access, noteAccess)
+// }
+
+// func getSharedNotes(w http.ResponseWriter, r *http.Request) {
+// 	var userNotes []Note
+// 	for _, item := range access {
+// 		if item.UserID == user.UserID {
+
+// 			userNotes = append(userNotes, item)
+
+// 		}
+// 	}
+// 	json.NewEncoder(w).Encode(userNotes)
+// }
+
+func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+	low := 0
+	high := len(notes) - 1
+	mid := 0
+	var mid_value Note
+	var input string
+	_ = json.NewDecoder(r.Body).Decode(&input)
+
+	for low <= high {
+		mid = low + (high-low)/2 //middle of the list
+		mid_value = notes[mid]   //get item to check if matches with T
+
+		if mid_value.Contents == input {
+			json.NewEncoder(w).Encode(mid_value)
+			return //we have matched the target T
+
+		} else if mid_value.Contents < input {
+			low = mid + 1 //left/lower side of the middle
+
+		} else {
+			high = mid - 1 //right/upper side of the middle
+		}
+	}
+
+	return //not found
 }
