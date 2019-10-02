@@ -27,7 +27,6 @@ type User struct {
 	UserID     int    `json: userID`
 	GivenName  string `json: givenName`
 	FamilyName string `json: familyName`
-	Username   string `json: userName`
 	Password   string `json: password`
 }
 
@@ -49,8 +48,8 @@ func main() {
 
 	//mock data
 	//mock users
-	users = append(users, User{UserID: 1, GivenName: "John", FamilyName: "Snow", Username: "john.snow", Password: "hello123"})
-	users = append(users, User{UserID: 2, GivenName: "Bob", FamilyName: "Williams", Username: "bobw", Password: "hi"})
+	users = append(users, User{UserID: 1, GivenName: "John", FamilyName: "Snow", Password: "hello123"})
+	users = append(users, User{UserID: 2, GivenName: "Bob", FamilyName: "Williams", Password: "hi"})
 	//mock notes
 	notes = append(notes, Note{NoteID: 1, UserID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
 	notes = append(notes, Note{NoteID: 2, UserID: 1, Title: "my note 2", Contents: "note2", DateCreated: time.Now(), DateUpdated: time.Now()})
@@ -68,6 +67,41 @@ func main() {
 	r.HandleFunc("/Notes/Search", search).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func setupDB() {
+	//Open db from setupDB file
+	db := openDB()
+
+	defer db.Close()
+
+	//Create queries
+	createUserTableQuery := `CREATE TABLE IF NOT EXISTS "User"(
+		UserID INT PRIMARY KEY,
+		GivenName VARCHAR(30),
+		FamilyName VARCHAR(30),
+		Password VARCHAR(30)
+	);`
+
+	createNoteTableQuery := `CREATE TABLE IF NOT EXISTS Note(
+		NoteID INT PRIMARY KEY,
+		UserID INT,
+		Title VARCHAR(30),
+		Contents VARCHAR(1000),
+		DateCreated DATE,
+		DateUpdated DATE,
+		FOREIGN KEY (UserID) REFERENCES "User"(UserID)`
+
+	//Execute queries
+	_, err := db.Exec(createUserTableQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(createNoteTableQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
