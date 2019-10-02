@@ -1,12 +1,12 @@
 CREATE TABLE "User" (
-	UserID INT PRIMARY KEY,
+	UserID SERIAL PRIMARY KEY,
 	GivenName VARCHAR(30),
 	FamilyName VARCHAR(30),
 	Password VARCHAR(30)
 );
 
 CREATE TABLE Note (
-	NoteID INT PRIMARY KEY,
+	NoteID SERIAL PRIMARY KEY,
 	UserID INT,
 	Title VARCHAR(30),
 	Contents VARCHAR(300),
@@ -16,7 +16,7 @@ CREATE TABLE Note (
 );
 
 CREATE TABLE NoteAccess (
-	NoteAccessID INT PRIMARY KEY,
+	NoteAccessID SERIAL PRIMARY KEY,
 	NoteID INT,
 	UserID INT,
 	Read BOOL,

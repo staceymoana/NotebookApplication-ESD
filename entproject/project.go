@@ -55,6 +55,9 @@ func main() {
 	notes = append(notes, Note{NoteID: 2, UserID: 1, Title: "my note 2", Contents: "note2", DateCreated: time.Now(), DateUpdated: time.Now()})
 	notes = append(notes, Note{NoteID: 3, UserID: 2, Title: "my note 3", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
 
+	//set up db
+	setupDB()
+
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
@@ -69,6 +72,17 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
+func openDB() (db *sql.DB) {
+	//Opens database called "EnterpriseNoteApp"
+	db, err := sql.Open("postgres", "user=postgres password=password dbname=EnterpriseNoteApp sslmode=disable")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return db
+}
+
 func setupDB() {
 	//Open db from setupDB file
 	db := openDB()
@@ -77,20 +91,21 @@ func setupDB() {
 
 	//Create queries
 	createUserTableQuery := `CREATE TABLE IF NOT EXISTS "User"(
-		UserID INT PRIMARY KEY,
+		UserID SERIAL PRIMARY KEY,
 		GivenName VARCHAR(30),
 		FamilyName VARCHAR(30),
 		Password VARCHAR(30)
 	);`
 
 	createNoteTableQuery := `CREATE TABLE IF NOT EXISTS Note(
-		NoteID INT PRIMARY KEY,
+		NoteID SERIAL PRIMARY KEY,
 		UserID INT,
 		Title VARCHAR(30),
 		Contents VARCHAR(1000),
 		DateCreated DATE,
 		DateUpdated DATE,
-		FOREIGN KEY (UserID) REFERENCES "User"(UserID)`
+		FOREIGN KEY (UserID) REFERENCES "User"(UserID)
+		);`
 
 	//Execute queries
 	_, err := db.Exec(createUserTableQuery)
@@ -186,12 +201,26 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(notes)
 }
 
+// not working properly.. add in random number and check if unique. change serial
 func createUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var newUser User
 	_ = json.NewDecoder(r.Body).Decode(&newUser)
 
-	newUser.UserID = rand.Intn(100000)
+	db := openDB()
+	defer db.Close()
+
+	stmt, err := db.Prepare(`INSERT INTO "User" VALUES ($1, $2, $3, $4)`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = stmt.Exec(newUser.UserID, newUser.GivenName, newUser.FamilyName, newUser.Password)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(w, "Created new user.")
 	users = append(users, newUser)
 	json.NewEncoder(w).Encode(newUser)
 }
