@@ -101,7 +101,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
 			json.NewEncoder(w).Encode(userNotes)
 		}
 	}
-
+	json.NewEncoder(w).Encode(userNotes)
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
