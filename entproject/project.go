@@ -42,6 +42,7 @@ type NoteAccess struct {
 var notes []Note
 var users []User
 var access []NoteAccess
+var db *sql.DB
 
 func main() {
 	//Router
@@ -58,7 +59,7 @@ func main() {
 
 	//set up db
 	setupDB()
-
+	defer db.Close()
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
@@ -86,9 +87,7 @@ func openDB() (db *sql.DB) {
 
 func setupDB() {
 	//Open db from setupDB file
-	db := openDB()
-
-	defer db.Close()
+	db = openDB()
 
 	//Create queries
 	createUserTableQuery := `CREATE TABLE IF NOT EXISTS "User"(
@@ -202,27 +201,22 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(notes)
 }
 
-// not working properly.. add in random number and check if unique. change serial
+// Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var newUser User
+
 	_ = json.NewDecoder(r.Body).Decode(&newUser)
 
-	db := openDB()
-	defer db.Close()
-
-	stmt, err := db.Prepare(`INSERT INTO "User" VALUES ($1, $2, $3, $4)`)
+	//Return UserID when inserting to let user know their ID
+	stmt := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
+	userID := 0
+	err := db.QueryRow(stmt, newUser.GivenName, newUser.FamilyName, newUser.Password).Scan(&userID)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	_, err = stmt.Exec(newUser.UserID, newUser.GivenName, newUser.FamilyName, newUser.Password)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(w, "Created new user.")
-	users = append(users, newUser)
+	//Checking
+	fmt.Println("Created new user with ID", userID)
 	json.NewEncoder(w).Encode(newUser)
 }
 
