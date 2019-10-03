@@ -56,7 +56,12 @@ func main() {
 	//mock notes
 	notes = append(notes, Note{NoteID: 1, UserID: 1, Title: "my note", Contents: "hi this is a note", DateCreated: time.Now(), DateUpdated: time.Now()})
 	notes = append(notes, Note{NoteID: 2, UserID: 1, Title: "my note 2", Contents: "note2", DateCreated: time.Now(), DateUpdated: time.Now()})
-	notes = append(notes, Note{NoteID: 3, UserID: 2, Title: "my note 3", Contents: "hi this is a note2", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 3, UserID: 2, Title: "my note 3", Contents: "hi cat note", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 4, UserID: 1, Title: "my note 4", Contents: "hello world", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 5, UserID: 2, Title: "my note 5", Contents: "hi dog", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 6, UserID: 2, Title: "my note 6", Contents: "pup hi note", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 7, UserID: 1, Title: "my note 7", Contents: "hello doggo", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 8, UserID: 2, Title: "my note 8", Contents: "note is world", DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	//set up db
 	setupDB()
@@ -272,23 +277,23 @@ func insertionSort(arr []Note) []Note {
 
 var finalvalue Note
 
-func search(input string, sortednotes []Note) int { //T is the lastname you are searching for
+func search(w http.ResponseWriter, r *http.Request, input string, sortednotes []Note, mid_value Note) int { //T is the lastname you are searching for
 	//sortednotes := insertionSort(notes)
 	low := 0
 	high := len(sortednotes) - 1
 	mid := 0
-	var mid_value Note
+	//var mid_value Note
 	//var input Note
 	//_ = json.NewDecoder(r.Body).Decode(&input)
 
 	for low <= high {
-		mid = low + (high-low)/2     //middle of the list
-		mid_value = sortednotes[mid] //get item to check if matches with T
+		mid = low + (high-low)/2 //middle of the list
+		//mid_value = sortednotes[mid] //get item to check if matches with T
 
 		if mid_value.Contents == input || strings.Contains(mid_value.Contents, input) {
 			//json.NewEncoder(w).Encode(mid_value)
-			finalvalue = mid_value
-			return 0 //we have matched the target T
+			addFoundNote(mid_value)
+			return mid //we have matched the target T
 
 		} else if mid_value.Contents < input {
 			low = mid + 1 //left/lower side of the middle
@@ -301,7 +306,26 @@ func search(input string, sortednotes []Note) int { //T is the lastname you are 
 	return -1 //not found
 }
 
+var foundnotes []Note
+
+func addFoundNote(note Note) {
+
+	if len(foundnotes) == 0 {
+		foundnotes = append(foundnotes, note)
+	} else {
+		for index := 0; index < len(foundnotes); index++ {
+			if foundnotes[index].Title == note.Title {
+
+				return
+			}
+		}
+		foundnotes = append(foundnotes, note)
+	}
+
+}
+
 func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+	foundnotes = nil
 	sortednotes := insertionSort(notes)
 	low := 0
 	high := len(notes) - 1
@@ -314,17 +338,17 @@ func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname
 		mid = low + (high-low)/2     //middle of the list
 		mid_value = sortednotes[mid] //get item to check if matches with T
 
-		if mid_value.Contents == input.Contents || (search(input.Contents, sortednotes) == 0) {
-			json.NewEncoder(w).Encode(finalvalue)
+		if mid_value.Contents == input.Contents || (search(w, r, input.Contents, sortednotes, mid_value) == 0) {
+
 			return //we have matched the target T
 
-		} else if (mid_value.Contents < input.Contents) || (search(input.Contents, sortednotes) == -1) {
+		} else if (mid_value.Contents < input.Contents) || (search(w, r, input.Contents, sortednotes, mid_value) == -1) {
 			low = mid + 1 //left/lower side of the middle
 
 		} else {
 			high = mid - 1 //right/upper side of the middle
 		}
 	}
-
+	json.NewEncoder(w).Encode(foundnotes)
 	return //not found
 }
