@@ -216,8 +216,20 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	var newNote Note
 	_ = json.NewDecoder(r.Body).Decode(&newNote)
 
-	newNote.NoteID = rand.Intn(100000)
-	notes = append(notes, newNote)
+	//Prepare query
+	query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5)`
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Get todays date
+	date := time.Now()
+	_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, date, date)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Created new note")
 	json.NewEncoder(w).Encode(newNote)
 }
 
