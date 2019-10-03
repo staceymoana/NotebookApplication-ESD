@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
 
@@ -126,13 +125,64 @@ func setupDB() {
 }
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notes)
+	//w.Header().Set("Content-Type", "application/json")
+	rows, err := db.Query(`SELECT * FROM Note`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//for each row print ln - need to change to html list at some point
+	for rows.Next() {
+		var (
+			noteID      int
+			userID      int
+			title       string
+			contents    string
+			dateCreated time.Time
+			dateUpdated time.Time
+		)
+		err = rows.Scan(&noteID, &userID, &title, &contents, &dateCreated, &dateUpdated)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+	}
+
+	//Error check
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//json.NewEncoder(w).Encode(notes)
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	//w.Header().Set("Content-Type", "application/json")
+	//json.NewEncoder(w).Encode(users)
+	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//for each row print ln - need to change to html list
+	for rows.Next() {
+		var (
+			userID     int
+			givenName  string
+			familyName string
+		)
+		err = rows.Scan(&userID, &givenName, &familyName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(userID, givenName, familyName)
+	}
+	//Error check
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
