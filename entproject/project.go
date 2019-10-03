@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"strconv"
 	"time"
@@ -274,7 +275,7 @@ var finalvalue Note
 func search(input string, sortednotes []Note) int { //T is the lastname you are searching for
 	//sortednotes := insertionSort(notes)
 	low := 0
-	high := len(notes) - 1
+	high := len(sortednotes) - 1
 	mid := 0
 	var mid_value Note
 	//var input Note
@@ -284,10 +285,10 @@ func search(input string, sortednotes []Note) int { //T is the lastname you are 
 		mid = low + (high-low)/2     //middle of the list
 		mid_value = sortednotes[mid] //get item to check if matches with T
 
-		if mid_value.Contents == input {
+		if mid_value.Contents == input || strings.Contains(mid_value.Contents, input) {
 			//json.NewEncoder(w).Encode(mid_value)
 			finalvalue = mid_value
-			return mid //we have matched the target T
+			return 0 //we have matched the target T
 
 		} else if mid_value.Contents < input {
 			low = mid + 1 //left/lower side of the middle
@@ -313,11 +314,11 @@ func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname
 		mid = low + (high-low)/2     //middle of the list
 		mid_value = sortednotes[mid] //get item to check if matches with T
 
-		if (mid_value.Contents == input.Contents) || (search(mid_value.Contents, sortednotes) == 0) {
+		if mid_value.Contents == input.Contents || (search(input.Contents, sortednotes) == 0) {
 			json.NewEncoder(w).Encode(finalvalue)
 			return //we have matched the target T
 
-		} else if (mid_value.Contents < input.Contents) || (search(mid_value.Contents, sortednotes) == -1) {
+		} else if (mid_value.Contents < input.Contents) || (search(input.Contents, sortednotes) == -1) {
 			low = mid + 1 //left/lower side of the middle
 
 		} else {
