@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -67,7 +68,7 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
-	r.HandleFunc("/Notes/Search", search).Methods("POST")
+	r.HandleFunc("/Notes/Search", searchPartial).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -274,7 +275,38 @@ func insertionSort(arr []Note) []Note {
 	return arr
 }
 
-func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+var finalvalue Note
+
+func search(input string, sortednotes []Note) int { //T is the lastname you are searching for
+	//sortednotes := insertionSort(notes)
+	low := 0
+	high := len(notes) - 1
+	mid := 0
+	var mid_value Note
+	//var input Note
+	//_ = json.NewDecoder(r.Body).Decode(&input)
+
+	for low <= high {
+		mid = low + (high-low)/2     //middle of the list
+		mid_value = sortednotes[mid] //get item to check if matches with T
+
+		if mid_value.Contents == input {
+			//json.NewEncoder(w).Encode(mid_value)
+			finalvalue = mid_value
+			return mid //we have matched the target T
+
+		} else if mid_value.Contents < input {
+			low = mid + 1 //left/lower side of the middle
+
+		} else {
+			high = mid - 1 //right/upper side of the middle
+		}
+	}
+
+	return -1 //not found
+}
+
+func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
 	sortednotes := insertionSort(notes)
 	low := 0
 	high := len(notes) - 1
@@ -287,11 +319,11 @@ func search(w http.ResponseWriter, r *http.Request) { //T is the lastname you ar
 		mid = low + (high-low)/2     //middle of the list
 		mid_value = sortednotes[mid] //get item to check if matches with T
 
-		if mid_value.Contents == input.Contents {
-			json.NewEncoder(w).Encode(mid_value)
+		if (mid_value.Contents == input.Contents) || (search(mid_value.Contents, sortednotes) == 0) {
+			json.NewEncoder(w).Encode(finalvalue)
 			return //we have matched the target T
 
-		} else if mid_value.Contents < input.Contents {
+		} else if (mid_value.Contents < input.Contents) || (search(mid_value.Contents, sortednotes) == -1) {
 			low = mid + 1 //left/lower side of the middle
 
 		} else {
