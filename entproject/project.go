@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
-
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -74,7 +73,7 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
-	r.HandleFunc("/Notes/Search", partialSearch).Methods("POST")
+	r.HandleFunc("/Notes/Search", anotherSearch).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -426,6 +425,7 @@ func addFoundNote(note Note) {
 // 	return //not found
 // }
 
+//close to working but still skips over some elements
 func partialSearch(w http.ResponseWriter, r *http.Request) {
 	foundnotes = nil
 	sortednotes := insertionSort(notes)
@@ -454,7 +454,7 @@ func partialSearch(w http.ResponseWriter, r *http.Request) {
 
 func searchLower(sortednotes []Note, input string, low int, high int) bool {
 
-	if low <= high {
+	for low <= high {
 		mid := low + ((high - low) >> 1) //middle of the list
 		mid_value := sortednotes[mid]
 
@@ -479,7 +479,7 @@ func searchLower(sortednotes []Note, input string, low int, high int) bool {
 
 func searchHigher(sortednotes []Note, input string, low int, high int) bool {
 
-	if low <= high {
+	for low <= high {
 		mid := low + ((high - low) >> 1) //middle of the list
 		mid_value := sortednotes[mid]
 
@@ -509,4 +509,20 @@ func mysearch(txt string, pattern string) int {
 		flag = -1
 	}
 	return flag
+}
+
+//fully working but not using binary
+func anotherSearch(w http.ResponseWriter, r *http.Request) {
+
+	var input Note
+	_ = json.NewDecoder(r.Body).Decode(&input)
+	foundnotes = nil
+	sortednotes := insertionSort(notes)
+	for i := 0; i < len(sortednotes); i++ {
+		if sortednotes[i].Contents == input.Contents || (mysearch(sortednotes[i].Contents, input.Contents) == 0) {
+			addFoundNote(sortednotes[i])
+		}
+	}
+	json.NewEncoder(w).Encode(foundnotes)
+
 }
