@@ -74,7 +74,7 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
-	r.HandleFunc("/Notes/Search", searchPartial).Methods("POST")
+	r.HandleFunc("/Notes/Search", partialSearch).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -330,48 +330,50 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 // }
 func insertionSort(arr []Note) []Note {
 	for i := 1; i < len(arr); i++ {
-		key := arr[i].Contents
+		key := len(arr[i].Contents)
 		ts := arr[i]
 		j := i - 1
-		for j >= 0 && key < arr[j].Contents {
+		for j >= 0 && key < len(arr[j].Contents) {
 			arr[j+1] = arr[j]
 			j -= 1
 		}
 		arr[j+1] = ts
 	}
+	fmt.Println(arr)
 	return arr
 }
 
-var finalvalue Note
+// var finalvalue Note
 
-func search(w http.ResponseWriter, r *http.Request, input string, sortednotes []Note, mid_value Note) int { //T is the lastname you are searching for
-	//sortednotes := insertionSort(notes)
-	low := 0
-	high := len(sortednotes) - 1
-	mid := 0
-	//var mid_value Note
-	//var input Note
-	//_ = json.NewDecoder(r.Body).Decode(&input)
+// func searchbin(w http.ResponseWriter, r *http.Request, input string, sortednotes []Note) int { //T is the lastname you are searching for
+// 	//sortednotes := insertionSort(notes)
+// 	low := 0
+// 	high := len(sortednotes) - 1
+// 	mid := 0
+// 	var mid_value Note
+// 	//var input Note
+// 	//_ = json.NewDecoder(r.Body).Decode(&input)
 
-	for low <= high {
-		mid = low + (high-low)/2 //middle of the list
-		//mid_value = sortednotes[mid] //get item to check if matches with T
+// 	for low <= high {
+// 		mid = low + (high-low)/2     //middle of the list
+// 		mid_value = sortednotes[mid] //get item to check if matches with T
 
-		if mid_value.Contents == input || strings.Contains(mid_value.Contents, input) {
-			//json.NewEncoder(w).Encode(mid_value)
-			addFoundNote(mid_value)
-			return mid //we have matched the target T
+// 		if mid_value.Contents == input || strings.Contains(mid_value.Contents, input) {
+// 			//json.NewEncoder(w).Encode(mid_value)
+// 			addFoundNote(mid_value)
+// 			return mid //we have matched the target T
 
-		} else if mid_value.Contents < input {
-			low = mid + 1 //left/lower side of the middle
+// 		} else if mid_value.Contents < input {
+// 			low = mid + 1 //left/lower side of the middle
 
-		} else {
-			high = mid - 1 //right/upper side of the middle
-		}
-	}
+// 		} else {
+// 			high = mid - 1 //right/upper side of the middle
+// 		}
 
-	return -1 //not found
-}
+// 	}
+
+// 	return -1 //not found
+// }
 
 var foundnotes []Note
 
@@ -387,35 +389,124 @@ func addFoundNote(note Note) {
 			}
 		}
 		foundnotes = append(foundnotes, note)
+
 	}
 
 }
 
-func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+// func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
+// 	foundnotes = nil
+// 	sortednotes := insertionSort(notes)
+// 	low := 0
+// 	high := len(sortednotes) - 1
+// 	mid := 0
+// 	var mid_value Note
+// 	var input Note
+// 	_ = json.NewDecoder(r.Body).Decode(&input)
+
+// 	for low <= high {
+// 		mid = low + (high-low)/2     //middle of the list
+// 		mid_value = sortednotes[mid] //get item to check if matches with T
+
+// 		if mid_value.Contents == input.Contents || (mysearch(mid_value.Contents, input.Contents) == 0) {
+// 			addFoundNote(mid_value)
+// 			json.NewEncoder(w).Encode(foundnotes)
+// 			return
+// 			//json.NewEncoder(w).Encode(foundnotes)
+// 			//we have matched the target T
+
+// 		} else if (mid_value.Contents < input.Contents) || (mysearch(mid_value.Contents, input.Contents) == -1) {
+// 			low = mid + 1 //left/lower side of the middle
+
+// 		} else {
+// 			high = mid - 1 //right/upper side of the middle
+// 		}
+// 	}
+// 	json.NewEncoder(w).Encode(foundnotes)
+// 	return //not found
+// }
+
+func partialSearch(w http.ResponseWriter, r *http.Request) {
 	foundnotes = nil
 	sortednotes := insertionSort(notes)
-	low := 0
-	high := len(notes) - 1
-	mid := 0
-	var mid_value Note
+	lowerlow := 0
+	higherhigh := len(sortednotes) - 1
+	mid := lowerlow + ((higherhigh - lowerlow) >> 1)
+
 	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
 
-	for low <= high {
-		mid = low + (high-low)/2     //middle of the list
-		mid_value = sortednotes[mid] //get item to check if matches with T
-
-		if mid_value.Contents == input.Contents || (search(w, r, input.Contents, sortednotes, mid_value) == 0) {
-
-			return //we have matched the target T
-
-		} else if (mid_value.Contents < input.Contents) || (search(w, r, input.Contents, sortednotes, mid_value) == -1) {
-			low = mid + 1 //left/lower side of the middle
-
-		} else {
-			high = mid - 1 //right/upper side of the middle
+	foundAllLower := false
+	for foundAllLower == false {
+		if searchLower(sortednotes, input.Contents, lowerlow, mid) == false {
+			foundAllLower = true
 		}
 	}
+	foundAllHigher := false
+	for foundAllHigher == false {
+		if searchLower(sortednotes, input.Contents, mid+1, higherhigh) == false {
+			foundAllHigher = true
+		}
+	}
+
 	json.NewEncoder(w).Encode(foundnotes)
-	return //not found
+}
+
+func searchLower(sortednotes []Note, input string, low int, high int) bool {
+
+	if low <= high {
+		mid := low + ((high - low) >> 1) //middle of the list
+		mid_value := sortednotes[mid]
+
+		if mid_value.Contents == input || (mysearch(mid_value.Contents, input) == 0) {
+			addFoundNote(mid_value)
+
+		} // else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
+		// 	low = mid + 1 //left/lower side of the middle
+
+		// } else {
+		// 	high = mid - 1 //right/upper side of the middle
+		// }
+
+		if len(sortednotes[mid].Contents) >= len(input) {
+			return searchLower(sortednotes, input, low, mid-1)
+		} else {
+			return searchLower(sortednotes, input, mid+1, high)
+		}
+	}
+	return false //not found
+}
+
+func searchHigher(sortednotes []Note, input string, low int, high int) bool {
+
+	if low <= high {
+		mid := low + ((high - low) >> 1) //middle of the list
+		mid_value := sortednotes[mid]
+
+		if mid_value.Contents == input || (mysearch(mid_value.Contents, input) == 0) {
+			addFoundNote(mid_value)
+
+			//return true
+		} //else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
+		// 	low = mid + 1 //left/lower side of the middle
+
+		// } else {
+		// 	high = mid - 1 //right/upper side of the middle
+		// }
+
+		if len(sortednotes[mid].Contents) > len(input) {
+			return searchHigher(sortednotes, input, low, mid-1)
+		} else {
+			return searchHigher(sortednotes, input, mid+1, high)
+		}
+	}
+	return false //not found
+}
+
+func mysearch(txt string, pattern string) int {
+	flag := 0
+	if !strings.Contains(txt, pattern) {
+		flag = -1
+	}
+	return flag
 }
