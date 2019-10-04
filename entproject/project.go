@@ -277,9 +277,14 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&newUser)
 
 	//Return UserID when inserting to let user know their ID
-	stmt := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
+	query := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userID := 0
-	err := db.QueryRow(stmt, newUser.GivenName, newUser.FamilyName, newUser.Password).Scan(&userID)
+	err = stmt.QueryRow(newUser.GivenName, newUser.FamilyName, newUser.Password).Scan(&userID)
 	if err != nil {
 		log.Fatal(err)
 	}
