@@ -211,6 +211,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
 	json.NewEncoder(w).Encode(userNotes)
 }
 
+//Create a note
 func createNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var newNote Note
