@@ -73,7 +73,8 @@ func main() {
 	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
-	r.HandleFunc("/Notes/Search", anotherSearch).Methods("POST")
+	r.HandleFunc("/Notes/Search", search).Methods("POST")
+	r.HandleFunc("/Notes/Analyse", analyseNote).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -444,7 +445,7 @@ func partialSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	foundAllHigher := false
 	for foundAllHigher == false {
-		if searchLower(sortednotes, input.Contents, mid+1, higherhigh) == false {
+		if searchHigher(sortednotes, input.Contents, mid+1, higherhigh) == false {
 			foundAllHigher = true
 		}
 	}
@@ -458,7 +459,7 @@ func searchLower(sortednotes []Note, input string, low int, high int) bool {
 		mid := low + ((high - low) >> 1) //middle of the list
 		mid_value := sortednotes[mid]
 
-		if mid_value.Contents == input || (mysearch(mid_value.Contents, input) == 0) {
+		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
 			addFoundNote(mid_value)
 
 		} // else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
@@ -483,7 +484,7 @@ func searchHigher(sortednotes []Note, input string, low int, high int) bool {
 		mid := low + ((high - low) >> 1) //middle of the list
 		mid_value := sortednotes[mid]
 
-		if mid_value.Contents == input || (mysearch(mid_value.Contents, input) == 0) {
+		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
 			addFoundNote(mid_value)
 
 			//return true
@@ -503,7 +504,7 @@ func searchHigher(sortednotes []Note, input string, low int, high int) bool {
 	return false //not found
 }
 
-func mysearch(txt string, pattern string) int {
+func contains(txt string, pattern string) int {
 	flag := 0
 	if !strings.Contains(txt, pattern) {
 		flag = -1
@@ -511,18 +512,37 @@ func mysearch(txt string, pattern string) int {
 	return flag
 }
 
+var count int
+
 //fully working but not using binary
-func anotherSearch(w http.ResponseWriter, r *http.Request) {
+func search(w http.ResponseWriter, r *http.Request) {
 
 	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
 	foundnotes = nil
 	sortednotes := insertionSort(notes)
 	for i := 0; i < len(sortednotes); i++ {
-		if sortednotes[i].Contents == input.Contents || (mysearch(sortednotes[i].Contents, input.Contents) == 0) {
+		if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
 			addFoundNote(sortednotes[i])
+
 		}
 	}
 	json.NewEncoder(w).Encode(foundnotes)
+
+}
+
+func analyseNote(w http.ResponseWriter, r *http.Request) {
+	count = 0
+	var input Note
+	_ = json.NewDecoder(r.Body).Decode(&input)
+	foundnotes = nil
+	sortednotes := insertionSort(notes)
+	for i := 0; i < len(sortednotes); i++ {
+		if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
+
+			count++
+		}
+	}
+	json.NewEncoder(w).Encode(count)
 
 }
