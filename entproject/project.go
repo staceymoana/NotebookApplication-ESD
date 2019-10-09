@@ -321,7 +321,94 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newUser)
 }
 
+//Check ID exists in db
+func checkUserID(id int) bool {
+	var userID int
+
+	query := `SELECT UserID FROM "User" WHERE UserID = $1;`
+	
+	//Prepare query
+	userIDCheck, err := db.Prepare(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = userIDCheck.QueryRow(id).Scan(&userID)
+
+	//if rows are emtpy, no matching userid
+	if err == sql.ErrNoRows {
+		return false
+	}
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return true
+}
+
+//Check password and userid matches and exist in db
+func checkPassword(password string, userID int) bool {
+	var newpass string
+
+	query := `SELECT Password FROM "User" WHERE Password = $1 and UserID = $2`
+	
+	//Prepare query
+	passwordCheck, err := db.Prepare(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = passwordCheck.QueryRow(password, userID).Scan(&newpass)
+
+	//if rows are emtpy, no matching password
+	if err == sql.ErrNoRows {
+		return false
+	}
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return true
+}
+
 func logIn(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json")
+
+	//_ = json.NewDecoder(r.Body).Decode(&details)
+	t, err := template.ParseFiles("entproject\\entproject\\logintemplate.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if r.Method == "POST" {
+		var logUser User
+		//convert input to int
+		id, err := strconv.Atoi(r.FormValue("id"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		//set input data to details
+		logUser.UserID = id
+		logUser.Password = r.FormValue("password")
+		log.Println(logUser)
+
+		if checkUserID(logUser.UserID) {
+			if checkPassword(logUser.Password, logUser.UserID) {
+				log.Println("Logged in")
+				//direct to user notes?
+			} else {
+				log.Println("Failed log in") //http error instead?
+				return
+			}
+		} else {
+			log.Println("Failed log in") //http error instead?
+			return
+		}
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+/*func logIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var details User
 	_ = json.NewDecoder(r.Body).Decode(&details)
@@ -335,7 +422,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Invalid username or password")
 
-}
+}*/
 
 // func shareNote(w http.ResponseWriter, r *http.Request) {
 // 	w.Header().Set("Content-Type", "application/json")
