@@ -68,6 +68,7 @@ func main() {
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
+	r.HandleFunc("/Users/Notes/{UserID}", getUserNotes).Methods("GET")
 	r.HandleFunc("/Notes/Create", createNote).Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
