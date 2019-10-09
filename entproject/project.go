@@ -326,7 +326,7 @@ func checkUserID(id int) bool {
 	var userID int
 
 	query := `SELECT UserID FROM "User" WHERE UserID = $1;`
-	
+
 	//Prepare query
 	userIDCheck, err := db.Prepare(query)
 	if err != nil {
@@ -350,7 +350,7 @@ func checkPassword(password string, userID int) bool {
 	var newpass string
 
 	query := `SELECT Password FROM "User" WHERE Password = $1 and UserID = $2`
-	
+
 	//Prepare query
 	passwordCheck, err := db.Prepare(query)
 	if err != nil {
@@ -387,7 +387,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 		//set input data to details
 		logUser.UserID = id
 		logUser.Password = r.FormValue("password")
-		log.Println(logUser)
+		//log.Println(logUser) //Checking
 
 		if checkUserID(logUser.UserID) {
 			if checkPassword(logUser.Password, logUser.UserID) {
