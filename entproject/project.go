@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -67,10 +66,10 @@ func main() {
 	//Route Handlers
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
-	r.HandleFunc("/Notes", createNote).Methods("POST")
+	r.HandleFunc("/Notes/Create", createNote).Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
-	r.HandleFunc("/Users/CreateUser", createUser).Methods("POST")
+	r.HandleFunc("/Users/Create", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
 	r.HandleFunc("/Notes/Search", search).Methods("POST")
@@ -125,27 +124,23 @@ func setupDB() {
 }
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query(`SELECT * FROM Note`)
 	if err != nil {
 		log.Fatal(err)
 	}
+	var notes []Note
+	var note Note
 
 	//for each row print ln - need to change to html list at some point
 	for rows.Next() {
-		var (
-			noteID      int
-			userID      int
-			title       string
-			contents    string
-			dateCreated time.Time
-			dateUpdated time.Time
-		)
-		err = rows.Scan(&noteID, &userID, &title, &contents, &dateCreated, &dateUpdated)
+
+		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+		notes = append(notes, note)
 	}
 
 	//Error check
@@ -154,48 +149,58 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	//json.NewEncoder(w).Encode(notes)
+	json.NewEncoder(w).Encode(notes)
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
-	//json.NewEncoder(w).Encode(users)
+	w.Header().Set("Content-Type", "application/json")
+
 	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	var users []User
+	var user User
 	//for each row print ln - need to change to html list
 	for rows.Next() {
-		var (
-			userID     int
-			givenName  string
-			familyName string
-		)
-		err = rows.Scan(&userID, &givenName, &familyName)
+
+		err = rows.Scan(&user.UserID, &user.GivenName, &user.FamilyName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(userID, givenName, familyName)
+		//fmt.Println(userID, givenName, familyName)
+
+		users = append(users, user)
 	}
 	//Error check
 	err = rows.Err()
 	if err != nil {
 		log.Fatal(err)
 	}
+	json.NewEncoder(w).Encode(users)
+
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	for _, item := range notes {
-		if strconv.Itoa(item.NoteID) == params["NoteID"] {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
+	rows, err := db.Query(`SELECT * FROM note WHERE note.noteid = ` + params["NoteID"])
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(&Note{})
+	var note Note
+	for rows.Next() {
+
+		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}
+	json.NewEncoder(w).Encode(note)
+
 }
 
 func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
@@ -237,37 +242,59 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
+	var newNote Note
+	_ = json.NewDecoder(r.Body).Decode(&newNote)
 
-	for index, item := range notes {
-		if strconv.Itoa(item.NoteID) == params["NoteID"] {
-			notes = append(notes[:index], notes[index+1:]...)
-			var newNote Note
-			_ = json.NewDecoder(r.Body).Decode(&newNote)
-
-			newNoteID, err := strconv.Atoi(params["NoteID"])
-			if err == nil {
-				newNote.NoteID = newNoteID
-				notes = append(notes, newNote)
-				json.NewEncoder(w).Encode(newNote)
-			}
-			return
-		}
+	query := `UPDATE Note SET userid= $1, title = $2, contents = $3, dateupdated = $4 WHERE Note.noteid =` + params["NoteID"]
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(notes)
+	//Get todays date
+	date := time.Now()
+	_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, date)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	json.NewEncoder(w).Encode(newNote)
+
+	// for index, item := range notes {
+	// 	if strconv.Itoa(item.NoteID) == params["NoteID"] {
+	// 		notes = append(notes[:index], notes[index+1:]...)
+	// 		var newNote Note
+	// 		_ = json.NewDecoder(r.Body).Decode(&newNote)
+
+	// 		newNoteID, err := strconv.Atoi(params["NoteID"])
+	// 		if err == nil {
+	// 			newNote.NoteID = newNoteID
+	// 			notes = append(notes, newNote)
+	// 			json.NewEncoder(w).Encode(newNote)
+	// 		}
+	// 		return
+	// 	}
+	// }
+	// json.NewEncoder(w).Encode(notes)
 
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	//w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	for index, item := range notes {
-		if strconv.Itoa(item.NoteID) == params["NoteID"] {
-			notes = append(notes[:index], notes[index+1:]...)
-			break
-		}
+	_, err := db.Exec(`DELETE FROM note WHERE note.noteid = ` + params["NoteID"])
+
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(notes)
+
+	// for index, item := range notes {
+	// 	if strconv.Itoa(item.NoteID) == params["NoteID"] {
+	// 		notes = append(notes[:index], notes[index+1:]...)
+	// 		break
+	// 	}
+	// }
+	// json.NewEncoder(w).Encode(notes)
 }
 
 // Creates a new user
