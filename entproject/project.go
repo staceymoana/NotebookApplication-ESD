@@ -73,7 +73,7 @@ func main() {
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/Users/Create", createUser).Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
-	r.HandleFunc("/Users/LogIn", logIn).Methods("POST")
+	r.HandleFunc("/Users/LogIn", logIn) //.Methods("POST")
 	r.HandleFunc("/Notes/Search", search).Methods("POST")
 	r.HandleFunc("/Notes/Analyse", analyseNote).Methods("POST")
 
@@ -375,7 +375,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 
 	//_ = json.NewDecoder(r.Body).Decode(&details)
-	t, err := template.ParseFiles("entproject\\logintemplate.html")
+	t, err := template.ParseFiles("entproject\\entproject\\logintemplate.html")
 	if err != nil {
 		log.Fatal(err)
 	}
