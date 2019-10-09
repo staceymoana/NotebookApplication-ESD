@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -373,7 +375,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 
 	//_ = json.NewDecoder(r.Body).Decode(&details)
-	t, err := template.ParseFiles("entproject\\entproject\\logintemplate.html")
+	t, err := template.ParseFiles("entproject\\logintemplate.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -627,36 +629,81 @@ func contains(txt string, pattern string) int {
 	return flag
 }
 
-var count int
-
 //fully working but not using binary
 func search(w http.ResponseWriter, r *http.Request) {
 
 	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
-	foundnotes = nil
-	sortednotes := insertionSort(notes)
-	for i := 0; i < len(sortednotes); i++ {
-		if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
-			addFoundNote(sortednotes[i])
 
-		}
+	var notes []Note
+	var note Note
+
+	rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
+	if err != nil {
+		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(foundnotes)
+
+	//for each row print ln - need to change to html list at some point
+	for rows.Next() {
+
+		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+		notes = append(notes, note)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// foundnotes = nil
+	// sortednotes := insertionSort(notes)
+	// for i := 0; i < len(notes); i++ {
+	// 	if notes[i].Contents == input.Contents || (contains(notes[i].Contents, input.Contents) == 0) {
+	// 		matchingnotes = append(matchingnotes, note)
+
+	// 	}
+	// }
+	json.NewEncoder(w).Encode(notes)
 
 }
 
 func analyseNote(w http.ResponseWriter, r *http.Request) {
-	count = 0
+	count := 0
+	// var input Note
+	// _ = json.NewDecoder(r.Body).Decode(&input)
+	// foundnotes = nil
+	// sortednotes := insertionSort(notes)
+	// for i := 0; i < len(sortednotes); i++ {
+	// 	if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
+
+	// 		count++
+	// 	}
+	// }
+
 	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
-	foundnotes = nil
-	sortednotes := insertionSort(notes)
-	for i := 0; i < len(sortednotes); i++ {
-		if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
 
-			count++
-		}
+	rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//for each row print ln - need to change to html list at some point
+	for rows.Next() {
+
+		// err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+		count++
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err)
 	}
 	json.NewEncoder(w).Encode(count)
 
