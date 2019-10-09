@@ -205,15 +205,22 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getUserNotes(w http.ResponseWriter, r *http.Request, user User) {
+func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
 	var userNotes []Note
-	for _, item := range notes {
-		if item.UserID == user.UserID {
+	rows, err := db.Query(`SELECT * FROM note WHERE note.userid = ` + params["UserID"])
+	if err != nil {
+		log.Fatal(err)
+	}
+	var note Note
+	for rows.Next() {
 
-			userNotes = append(userNotes, item)
-
+		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+		if err != nil {
+			log.Fatal(err)
 		}
+		userNotes = append(userNotes, note)
 	}
 	json.NewEncoder(w).Encode(userNotes)
 }
