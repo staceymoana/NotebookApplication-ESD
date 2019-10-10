@@ -455,9 +455,11 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 	//_ = json.NewDecoder(r.Body).Decode(&details)
 	t, err := template.ParseFiles("entproject\\logintemplate.html")
+
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if r.Method == "POST" {
 		var logUser User
 		//convert input to int
@@ -473,6 +475,17 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 		if checkUserID(logUser.UserID) {
 			if checkPassword(logUser.Password, logUser.UserID) {
 				log.Println("Logged in")
+				cookie, err := r.Cookie("logged-in")
+				if err == http.ErrNoCookie {
+					cookie = &http.Cookie{
+						Name:  "logged-in",
+						Value: strconv.Itoa(logUser.UserID),
+					}
+				}
+
+				http.SetCookie(w, cookie)
+				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+
 				//direct to user notes?
 			} else {
 				log.Println("Failed log in") //http error instead?
@@ -482,11 +495,17 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 			log.Println("Failed log in") //http error instead?
 			return
 		}
+	} else {
+		err = t.Execute(w, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+}
+
+func checkLoggedIn() {
+
 }
 
 /*func logIn(w http.ResponseWriter, r *http.Request) {
