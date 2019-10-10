@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport">
+    <title>User's Notes List</title>
+    
+    <style>
+        table {
+          font-family: arial, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+        }
+        
+        td, th {
+          border: 1px solid #dddddd;
+          text-align: left;
+          padding: 8px;
+        }
+        
+        tr:nth-child(even) {
+          background-color:  lightblue;
+        }
+    </style>
+
+</head>
+<body>
+<h1>User's Notes</h1>
+
+
+<table name="note_table">
+    <thead>
+        <th>NoteID</th>
+        <th>UserID</th>
+        <th>Title</th>
+        <th>Contents</th>
+        <th>Date Created</th>
+        <th>Date Updated</th>
+        
+    </thead>
+    <tbody>
+    {{range $value := .}}
+    <tr>
+      <td>{{$value.NoteID}}</td>
+      <td>{{$value.UserID}}</td>
+      <td>{{$value.Title}}</td>
+      <td>{{$value.Contents}}</td>
+      <td>{{$value.DateCreated}}</td>
+      <td>{{$value.DateUpdated}}</td>
+    </tr>
+
+    {{end}}
+  </tbody>
+    
+</table>
+
+</body>
+</html>
