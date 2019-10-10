@@ -72,7 +72,7 @@ func main() {
 	r.HandleFunc("/Notes/Create", createNote).Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
-	r.HandleFunc("/Users/Create", createUser).Methods("POST")
+	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn) //.Methods("POST")
 	r.HandleFunc("/Notes/Search", search).Methods("POST")
@@ -319,7 +319,7 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 
 // Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	/*w.Header().Set("Content-Type", "application/json")
 	var newUser User
 
 	_ = json.NewDecoder(r.Body).Decode(&newUser)
@@ -338,7 +338,38 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	//Checking
 	fmt.Println("Created new user with ID", userID)
-	json.NewEncoder(w).Encode(newUser)
+	json.NewEncoder(w).Encode(newUser)*/
+	t, err := template.ParseFiles("entproject\\createaccount.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//When submitted
+	if r.Method == "POST" {
+		var newUser User
+		//Assign input values to newUser
+		newUser.GivenName = r.FormValue("givenName")
+		newUser.FamilyName = r.FormValue("familyName")
+		newUser.Password = r.FormValue("password")
+
+		//Prepare query to insert into DB
+		query := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//Used to return userID so we can display it to the user
+		userID := 0
+		err = stmt.QueryRow(newUser.GivenName, newUser.FamilyName, newUser.Password).Scan(&userID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		newUser.UserID = userID
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 //Check ID exists in db
