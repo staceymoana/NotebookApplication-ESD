@@ -156,7 +156,12 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	//w.Header().Set("Content-Type", "application/json")
+
+	t, err := template.ParseFiles("entproject\\UserList.html")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
 	if err != nil {
@@ -177,11 +182,16 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 		users = append(users, user)
 	}
 	//Error check
-	err = rows.Err()
+	// err = rows.Err()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// json.NewEncoder(w).Encode(users)
+
+	err = t.Execute(w, users)
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(users)
 
 }
 
@@ -383,7 +393,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 
 	//_ = json.NewDecoder(r.Body).Decode(&details)
-	t, err := template.ParseFiles("entproject\\entproject\\logintemplate.html")
+	t, err := template.ParseFiles("entproject\\logintemplate.html")
 	if err != nil {
 		log.Fatal(err)
 	}
