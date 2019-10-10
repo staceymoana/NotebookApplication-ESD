@@ -69,7 +69,7 @@ func main() {
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
 	r.HandleFunc("/Users/Notes/{UserID}", getUserNotes).Methods("GET")
-	r.HandleFunc("/Notes/Create", createNote).Methods("POST")
+	r.HandleFunc("/Notes/Create", createNote) //.Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
@@ -250,25 +250,43 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 
 //Create a note
 func createNote(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var newNote Note
-	_ = json.NewDecoder(r.Body).Decode(&newNote)
+	//w.Header().Set("Content-Type", "application/json")
 
-	//Prepare query
-	query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5)`
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//Get todays date
-	date := time.Now()
-	_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, date, date)
+	//_ = json.NewDecoder(r.Body).Decode(&newNote)
+	t, err := template.ParseFiles("entproject\\createnote.html")
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Created new note")
-	json.NewEncoder(w).Encode(newNote)
+	if r.Method == "POST" {
+		var newNote Note
+
+		newNote.UserID = 1 //need to get from cookie
+		newNote.Title = r.FormValue("title")
+		newNote.Contents = r.FormValue("content")
+		date := time.Now()
+		newNote.DateCreated = date
+		newNote.DateUpdated = date
+
+		//Prepare query
+		query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5)`
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, newNote.DateCreated, newNote.DateUpdated)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//fmt.Println("Created new note")
+	//json.NewEncoder(w).Encode(newNote)
 }
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
