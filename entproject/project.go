@@ -198,7 +198,6 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 func getNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-
 	rows, err := db.Query(`SELECT * FROM note WHERE note.noteid = ` + params["NoteID"])
 	if err != nil {
 		log.Fatal(err)
