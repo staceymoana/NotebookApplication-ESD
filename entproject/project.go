@@ -69,13 +69,13 @@ func main() {
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
 	r.HandleFunc("/Users/Notes/{UserID}", getUserNotes).Methods("GET")
-	r.HandleFunc("/Notes/Create", createNote) //.Methods("POST")
+	r.HandleFunc("/Notes/Create/", createNote) //.Methods("POST")
 	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
-	r.HandleFunc("/Users/LogIn", logIn) //.Methods("POST")
-	r.HandleFunc("/Notes/Search", search).Methods("POST")
+	r.HandleFunc("/Users/LogIn", logIn)    //.Methods("POST")
+	r.HandleFunc("/Notes/Search/", search) //.Methods("POST")
 	r.HandleFunc("/Notes/Analyse", analyseNote).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
@@ -711,41 +711,46 @@ func contains(txt string, pattern string) int {
 //fully working but not using binary
 func search(w http.ResponseWriter, r *http.Request) {
 
-	var input Note
-	_ = json.NewDecoder(r.Body).Decode(&input)
-
-	var notes []Note
-	var note Note
-
-	rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
+	t, err := template.ParseFiles("entproject\\searchedNotes.html")
 	if err != nil {
 		log.Fatal(err)
 	}
+	var searchnotes []Note
+	if r.Method == "POST" {
+		var input string
 
-	//for each row print ln - need to change to html list at some point
-	for rows.Next() {
+		input = r.FormValue("search")
 
-		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+		var note Note
+
+		fmt.Println(input)
+
+		rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input + "%'")
 		if err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
-		notes = append(notes, note)
+
+		//for each row print ln - need to change to html list at some point
+		for rows.Next() {
+
+			err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+			searchnotes = append(searchnotes, note)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 	}
-	err = rows.Err()
+
+	err = t.Execute(w, searchnotes)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// foundnotes = nil
-	// sortednotes := insertionSort(notes)
-	// for i := 0; i < len(notes); i++ {
-	// 	if notes[i].Contents == input.Contents || (contains(notes[i].Contents, input.Contents) == 0) {
-	// 		matchingnotes = append(matchingnotes, note)
-
-	// 	}
-	// }
-	json.NewEncoder(w).Encode(notes)
 
 }
 
