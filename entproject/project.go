@@ -135,14 +135,12 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 	var notes []Note
 	var note Note
 
-	//for each row print ln - need to change to html list at some point
 	for rows.Next() {
 
 		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
 		if err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
 		notes = append(notes, note)
 	}
 
@@ -156,8 +154,6 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
-
 	t, err := template.ParseFiles("entproject\\UserList.html")
 	if err != nil {
 		log.Fatal(err)
@@ -170,23 +166,14 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 
 	var users []User
 	var user User
-	//for each row print ln - need to change to html list
 	for rows.Next() {
 
 		err = rows.Scan(&user.UserID, &user.GivenName, &user.FamilyName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println(userID, givenName, familyName)
-
 		users = append(users, user)
 	}
-	//Error check
-	// err = rows.Err()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// json.NewEncoder(w).Encode(users)
 
 	err = t.Execute(w, users)
 	if err != nil {
@@ -216,10 +203,9 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	t, err := template.ParseFiles("entproject\\userhome.html")
+	t, err := template.ParseFiles("userhome.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -245,30 +231,24 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//json.NewEncoder(w).Encode(userNotes)
 }
 
 //Create a note
 func createNote(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
-
-	//_ = json.NewDecoder(r.Body).Decode(&newNote)
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("entproject\\createnote.html")
+	t, err := template.ParseFiles("createnote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//_ = json.NewDecoder(r.Body).Decode(&newNote)
-
 	if r.Method == "POST" {
 		var newNote Note
 
-		newNote.UserID, err = strconv.Atoi(cookie.Value) //need to get from cookie
+		newNote.UserID, err = strconv.Atoi(cookie.Value)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -297,13 +277,18 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 
 	}
-	//fmt.Println("Created new note")
-	//json.NewEncoder(w).Encode(newNote)
 }
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	t, err := template.ParseFiles("entproject\\updatenote.html")
+
+	cookie := checkLoggedIn(r)
+
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+
+	t, err := template.ParseFiles("updatenote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -325,7 +310,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 	err = t.Execute(w, nil)
 	if err != nil {
@@ -334,7 +319,6 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
 	_, err := db.Exec(`DELETE FROM note WHERE note.noteid = ` + params["NoteID"])
@@ -342,46 +326,17 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// for index, item := range notes {
-	// 	if strconv.Itoa(item.NoteID) == params["NoteID"] {
-	// 		notes = append(notes[:index], notes[index+1:]...)
-	// 		break
-	// 	}
-	// }
-	// json.NewEncoder(w).Encode(notes)
 }
 
 // Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
-	/*w.Header().Set("Content-Type", "application/json")
+	t, err := template.ParseFiles("createaccount.html")
+	if err != nil {
+		log.Fatal(err)
+	}
 	var newUser User
-
-	_ = json.NewDecoder(r.Body).Decode(&newUser)
-
-	//Return UserID when inserting to let user know their ID
-	query := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	userID := 0
-	err = stmt.QueryRow(newUser.GivenName, newUser.FamilyName, newUser.Password).Scan(&userID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//Checking
-	fmt.Println("Created new user with ID", userID)
-	json.NewEncoder(w).Encode(newUser)*/
-	t, err := template.ParseFiles("entproject\\createaccount.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	//When submitted
 	if r.Method == "POST" {
-		var newUser User
 		//Assign input values to newUser
 		newUser.GivenName = r.FormValue("givenName")
 		newUser.FamilyName = r.FormValue("familyName")
@@ -400,16 +355,25 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		newUser.UserID = userID
-		//Checking
-		log.Println("Account created with ID:", newUser.UserID)
-	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Fatal(err)
+
+		t2, err := template.ParseFiles("accountcreated.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = t2.Execute(w, newUser)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err = t.Execute(w, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
-//Check ID exists in db
+/*//Check ID exists in db
 func checkUserID(id int) bool {
 	var userID int
 
@@ -431,7 +395,7 @@ func checkUserID(id int) bool {
 		log.Fatal(err.Error())
 	}
 	return true
-}
+}*/
 
 //Check password and userid matches and exist in db
 func checkPassword(password string, userID int) bool {
@@ -458,7 +422,7 @@ func checkPassword(password string, userID int) bool {
 }
 
 func logIn(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("entproject\\logintemplate.html")
+	t, err := template.ParseFiles("logintemplate.html")
 
 	if err != nil {
 		log.Fatal(err)
@@ -476,30 +440,30 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 		logUser.Password = r.FormValue("password")
 		//log.Println(logUser) //Checking
 
-		if checkUserID(logUser.UserID) {
-			if checkPassword(logUser.Password, logUser.UserID) {
-				log.Println("Logged in")
-				cookie, err := r.Cookie("logged-in")
-				if err == http.ErrNoCookie {
-					cookie = &http.Cookie{
-						Name:  "logged-in",
-						Value: strconv.Itoa(logUser.UserID),
-						Path:  "/",
-					}
+		//if checkUserID(logUser.UserID) {
+		if checkPassword(logUser.Password, logUser.UserID) {
+			log.Println("Logged in")
+			cookie, err := r.Cookie("logged-in")
+			if err == http.ErrNoCookie {
+				cookie = &http.Cookie{
+					Name:  "logged-in",
+					Value: strconv.Itoa(logUser.UserID),
+					Path:  "/",
 				}
-
-				http.SetCookie(w, cookie)
-				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-
-				//direct to user notes?
-			} else {
-				log.Println("Failed log in") //http error instead?
-				return
 			}
+
+			http.SetCookie(w, cookie)
+			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+
+			//direct to user notes?
 		} else {
 			log.Println("Failed log in") //http error instead?
 			return
 		}
+		// } else {
+		// 	log.Println("Failed log in") //http error instead?
+		// 	return
+		// }
 	} else {
 		err = t.Execute(w, nil)
 		if err != nil {
@@ -512,92 +476,24 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 func checkLoggedIn(r *http.Request) *http.Cookie {
 	cookie, err := r.Cookie("logged-in")
 	if err == http.ErrNoCookie {
-		//log.Fatal(err)
 		return nil
 	}
 	return cookie
 }
 
-/*func logIn(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var details User
-	_ = json.NewDecoder(r.Body).Decode(&details)
-
-	for _, item := range users {
-
-		if item.UserID == details.UserID && item.Password == details.Password {
-			getUserNotes(w, r, item)
-			return
-		}
-	}
-	fmt.Println("Invalid username or password")
-
-}*/
-
-// func shareNote(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	var noteAccess NoteAccess
-// 	_ = json.NewDecoder(r.Body).Decode(&noteAccess)
-
-// 	access.append(access, noteAccess)
-// }
-
-// func getSharedNotes(w http.ResponseWriter, r *http.Request) {
-// 	var userNotes []Note
-// 	for _, item := range access {
-// 		if item.UserID == user.UserID {
-
-// 			userNotes = append(userNotes, item)
-
+// func insertionSort(arr []Note) []Note {
+// 	for i := 1; i < len(arr); i++ {
+// 		key := len(arr[i].Contents)
+// 		ts := arr[i]
+// 		j := i - 1
+// 		for j >= 0 && key < len(arr[j].Contents) {
+// 			arr[j+1] = arr[j]
+// 			j -= 1
 // 		}
+// 		arr[j+1] = ts
 // 	}
-// 	json.NewEncoder(w).Encode(userNotes)
-// }
-func insertionSort(arr []Note) []Note {
-	for i := 1; i < len(arr); i++ {
-		key := len(arr[i].Contents)
-		ts := arr[i]
-		j := i - 1
-		for j >= 0 && key < len(arr[j].Contents) {
-			arr[j+1] = arr[j]
-			j -= 1
-		}
-		arr[j+1] = ts
-	}
-	fmt.Println(arr)
-	return arr
-}
-
-// var finalvalue Note
-
-// func searchbin(w http.ResponseWriter, r *http.Request, input string, sortednotes []Note) int { //T is the lastname you are searching for
-// 	//sortednotes := insertionSort(notes)
-// 	low := 0
-// 	high := len(sortednotes) - 1
-// 	mid := 0
-// 	var mid_value Note
-// 	//var input Note
-// 	//_ = json.NewDecoder(r.Body).Decode(&input)
-
-// 	for low <= high {
-// 		mid = low + (high-low)/2     //middle of the list
-// 		mid_value = sortednotes[mid] //get item to check if matches with T
-
-// 		if mid_value.Contents == input || strings.Contains(mid_value.Contents, input) {
-// 			//json.NewEncoder(w).Encode(mid_value)
-// 			addFoundNote(mid_value)
-// 			return mid //we have matched the target T
-
-// 		} else if mid_value.Contents < input {
-// 			low = mid + 1 //left/lower side of the middle
-
-// 		} else {
-// 			high = mid - 1 //right/upper side of the middle
-// 		}
-
-// 	}
-
-// 	return -1 //not found
+// 	fmt.Println(arr)
+// 	return arr
 // }
 
 var foundnotes []Note
@@ -651,83 +547,83 @@ func addFoundNote(note Note) {
 // 	return //not found
 // }
 
-//close to working but still skips over some elements
-func partialSearch(w http.ResponseWriter, r *http.Request) {
-	foundnotes = nil
-	sortednotes := insertionSort(notes)
-	lowerlow := 0
-	higherhigh := len(sortednotes) - 1
-	mid := lowerlow + ((higherhigh - lowerlow) >> 1)
+// //close to working but still skips over some elements
+// func partialSearch(w http.ResponseWriter, r *http.Request) {
+// 	foundnotes = nil
+// 	sortednotes := insertionSort(notes)
+// 	lowerlow := 0
+// 	higherhigh := len(sortednotes) - 1
+// 	mid := lowerlow + ((higherhigh - lowerlow) >> 1)
 
-	var input Note
-	_ = json.NewDecoder(r.Body).Decode(&input)
+// 	var input Note
+// 	_ = json.NewDecoder(r.Body).Decode(&input)
 
-	foundAllLower := false
-	for foundAllLower == false {
-		if searchLower(sortednotes, input.Contents, lowerlow, mid) == false {
-			foundAllLower = true
-		}
-	}
-	foundAllHigher := false
-	for foundAllHigher == false {
-		if searchHigher(sortednotes, input.Contents, mid+1, higherhigh) == false {
-			foundAllHigher = true
-		}
-	}
+// 	foundAllLower := false
+// 	for foundAllLower == false {
+// 		if searchLower(sortednotes, input.Contents, lowerlow, mid) == false {
+// 			foundAllLower = true
+// 		}
+// 	}
+// 	foundAllHigher := false
+// 	for foundAllHigher == false {
+// 		if searchHigher(sortednotes, input.Contents, mid+1, higherhigh) == false {
+// 			foundAllHigher = true
+// 		}
+// 	}
 
-	json.NewEncoder(w).Encode(foundnotes)
-}
+// 	json.NewEncoder(w).Encode(foundnotes)
+// }
 
-func searchLower(sortednotes []Note, input string, low int, high int) bool {
+// func searchLower(sortednotes []Note, input string, low int, high int) bool {
 
-	for low <= high {
-		mid := low + ((high - low) >> 1) //middle of the list
-		mid_value := sortednotes[mid]
+// 	for low <= high {
+// 		mid := low + ((high - low) >> 1) //middle of the list
+// 		mid_value := sortednotes[mid]
 
-		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
-			addFoundNote(mid_value)
+// 		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
+// 			addFoundNote(mid_value)
 
-		} // else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
-		// 	low = mid + 1 //left/lower side of the middle
+// 		} // else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
+// 		// 	low = mid + 1 //left/lower side of the middle
 
-		// } else {
-		// 	high = mid - 1 //right/upper side of the middle
-		// }
+// 		// } else {
+// 		// 	high = mid - 1 //right/upper side of the middle
+// 		// }
 
-		if len(sortednotes[mid].Contents) >= len(input) {
-			return searchLower(sortednotes, input, low, mid-1)
-		} else {
-			return searchLower(sortednotes, input, mid+1, high)
-		}
-	}
-	return false //not found
-}
+// 		if len(sortednotes[mid].Contents) >= len(input) {
+// 			return searchLower(sortednotes, input, low, mid-1)
+// 		} else {
+// 			return searchLower(sortednotes, input, mid+1, high)
+// 		}
+// 	}
+// 	return false //not found
+// }
 
-func searchHigher(sortednotes []Note, input string, low int, high int) bool {
+// func searchHigher(sortednotes []Note, input string, low int, high int) bool {
 
-	for low <= high {
-		mid := low + ((high - low) >> 1) //middle of the list
-		mid_value := sortednotes[mid]
+// 	for low <= high {
+// 		mid := low + ((high - low) >> 1) //middle of the list
+// 		mid_value := sortednotes[mid]
 
-		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
-			addFoundNote(mid_value)
+// 		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
+// 			addFoundNote(mid_value)
 
-			//return true
-		} //else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
-		// 	low = mid + 1 //left/lower side of the middle
+// 			//return true
+// 		} //else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
+// 		// 	low = mid + 1 //left/lower side of the middle
 
-		// } else {
-		// 	high = mid - 1 //right/upper side of the middle
-		// }
+// 		// } else {
+// 		// 	high = mid - 1 //right/upper side of the middle
+// 		// }
 
-		if len(sortednotes[mid].Contents) > len(input) {
-			return searchHigher(sortednotes, input, low, mid-1)
-		} else {
-			return searchHigher(sortednotes, input, mid+1, high)
-		}
-	}
-	return false //not found
-}
+// 		if len(sortednotes[mid].Contents) > len(input) {
+// 			return searchHigher(sortednotes, input, low, mid-1)
+// 		} else {
+// 			return searchHigher(sortednotes, input, mid+1, high)
+// 		}
+// 	}
+// 	return false //not found
+// }
 
 func contains(txt string, pattern string) int {
 	flag := 0
@@ -785,16 +681,6 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 func analyseNote(w http.ResponseWriter, r *http.Request) {
 	count := 0
-	// var input Note
-	// _ = json.NewDecoder(r.Body).Decode(&input)
-	// foundnotes = nil
-	// sortednotes := insertionSort(notes)
-	// for i := 0; i < len(sortednotes); i++ {
-	// 	if sortednotes[i].Contents == input.Contents || (contains(sortednotes[i].Contents, input.Contents) == 0) {
-
-	// 		count++
-	// 	}
-	// }
 
 	var input Note
 	_ = json.NewDecoder(r.Body).Decode(&input)
@@ -806,12 +692,6 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 
 	//for each row print ln - need to change to html list at some point
 	for rows.Next() {
-
-		// err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
 		count++
 	}
 	err = rows.Err()
