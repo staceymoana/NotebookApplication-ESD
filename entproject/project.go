@@ -219,7 +219,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	t, err := template.ParseFiles("userhome.html")
+	t, err := template.ParseFiles("entproject\\userhome.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -253,16 +253,25 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 
 	//_ = json.NewDecoder(r.Body).Decode(&newNote)
-	t, err := template.ParseFiles("entproject\\createnote.html")
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
 
+	t, err := template.ParseFiles("entproject\\createnote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	//_ = json.NewDecoder(r.Body).Decode(&newNote)
+
 	if r.Method == "POST" {
 		var newNote Note
 
-		newNote.UserID = 1 //need to get from cookie
+		newNote.UserID, err = strconv.Atoi(cookie.Value) //need to get from cookie
+		if err != nil {
+			log.Fatal(err)
+		}
 		newNote.Title = r.FormValue("title")
 		newNote.Contents = r.FormValue("content")
 		date := time.Now()
@@ -280,10 +289,13 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
+
 	err = t.Execute(w, nil)
 	if err != nil {
 		log.Fatal(err)
+
 	}
 	//fmt.Println("Created new note")
 	//json.NewEncoder(w).Encode(newNote)
@@ -291,7 +303,7 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	t, err := template.ParseFiles("updatenote.html")
+	t, err := template.ParseFiles("entproject\\updatenote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -362,7 +374,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	//Checking
 	fmt.Println("Created new user with ID", userID)
 	json.NewEncoder(w).Encode(newUser)*/
-	t, err := template.ParseFiles("createaccount.html")
+	t, err := template.ParseFiles("entproject\\createaccount.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -446,10 +458,7 @@ func checkPassword(password string, userID int) bool {
 }
 
 func logIn(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
-
-	//_ = json.NewDecoder(r.Body).Decode(&details)
-	t, err := template.ParseFiles("logintemplate.html")
+	t, err := template.ParseFiles("entproject\\logintemplate.html")
 
 	if err != nil {
 		log.Fatal(err)
@@ -475,6 +484,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 					cookie = &http.Cookie{
 						Name:  "logged-in",
 						Value: strconv.Itoa(logUser.UserID),
+						Path:  "/",
 					}
 				}
 
@@ -499,8 +509,13 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func checkLoggedIn() {
-
+func checkLoggedIn(r *http.Request) *http.Cookie {
+	cookie, err := r.Cookie("logged-in")
+	if err == http.ErrNoCookie {
+		//log.Fatal(err)
+		return nil
+	}
+	return cookie
 }
 
 /*func logIn(w http.ResponseWriter, r *http.Request) {
