@@ -69,8 +69,8 @@ func main() {
 	r.HandleFunc("/Notes", getNotes).Methods("GET")
 	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
 	r.HandleFunc("/Users/Notes/{UserID}", getUserNotes).Methods("GET")
-	r.HandleFunc("/Notes/Create/", createNote) //.Methods("POST")
-	r.HandleFunc("/Notes/{NoteID}", updateNote).Methods("PUT")
+	r.HandleFunc("/Notes/Create/", createNote)         //.Methods("POST")
+	r.HandleFunc("/Notes/Update/{NoteID}", updateNote) //.Methods("PUT")
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
@@ -219,7 +219,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
-	t, err := template.ParseFiles("entproject\\userhome.html")
+	t, err := template.ParseFiles("userhome.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -290,42 +290,35 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	var newNote Note
-	_ = json.NewDecoder(r.Body).Decode(&newNote)
-
-	query := `UPDATE Note SET userid= $1, title = $2, contents = $3, dateupdated = $4 WHERE Note.noteid =` + params["NoteID"]
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//Get todays date
-	date := time.Now()
-	_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, date)
+	t, err := template.ParseFiles("updatenote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	json.NewEncoder(w).Encode(newNote)
+	if r.Method == "POST" {
+		var newNote Note
+		//Have to check user has access privileges
+		newNote.Title = r.FormValue("title")
+		newNote.Contents = r.FormValue("content")
 
-	// for index, item := range notes {
-	// 	if strconv.Itoa(item.NoteID) == params["NoteID"] {
-	// 		notes = append(notes[:index], notes[index+1:]...)
-	// 		var newNote Note
-	// 		_ = json.NewDecoder(r.Body).Decode(&newNote)
-
-	// 		newNoteID, err := strconv.Atoi(params["NoteID"])
-	// 		if err == nil {
-	// 			newNote.NoteID = newNoteID
-	// 			notes = append(notes, newNote)
-	// 			json.NewEncoder(w).Encode(newNote)
-	// 		}
-	// 		return
-	// 	}
-	// }
-	// json.NewEncoder(w).Encode(notes)
-
+		query := `UPDATE Note SET title = $1, contents = $2, dateupdated = $3 WHERE Note.noteid =` + params["NoteID"]
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//Get todays date
+		date := time.Now()
+		_, err = stmt.Exec(newNote.Title, newNote.Contents, date)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
@@ -369,7 +362,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	//Checking
 	fmt.Println("Created new user with ID", userID)
 	json.NewEncoder(w).Encode(newUser)*/
-	t, err := template.ParseFiles("entproject\\createaccount.html")
+	t, err := template.ParseFiles("createaccount.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -395,6 +388,8 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		newUser.UserID = userID
+		//Checking
+		log.Println("Account created with ID:", newUser.UserID)
 	}
 	err = t.Execute(w, nil)
 	if err != nil {
@@ -454,7 +449,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Type", "application/json")
 
 	//_ = json.NewDecoder(r.Body).Decode(&details)
-	t, err := template.ParseFiles("entproject\\logintemplate.html")
+	t, err := template.ParseFiles("logintemplate.html")
 
 	if err != nil {
 		log.Fatal(err)

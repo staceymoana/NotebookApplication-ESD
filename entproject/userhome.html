@@ -36,6 +36,7 @@
         <th>Contents</th>
         <th>Date Created</th>
         <th>Date Updated</th>
+        <th>Update</th>
         
     </thead>
     <tbody>
@@ -47,6 +48,7 @@
       <td>{{$value.Contents}}</td>
       <td>{{$value.DateCreated}}</td>
       <td>{{$value.DateUpdated}}</td>
+      <td><button type="button" onclick="location.href = '/Notes/Update/{{$value.NoteID}}';">Update</button></td>
     </tr>
 
     {{end}}
