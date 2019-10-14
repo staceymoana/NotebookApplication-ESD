@@ -74,9 +74,10 @@ func main() {
 	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
 	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
-	r.HandleFunc("/Users/LogIn", logIn)    //.Methods("POST")
-	r.HandleFunc("/Notes/Search/", search) //.Methods("POST")
-	r.HandleFunc("/Notes/Analyse", analyseNote).Methods("POST")
+	r.HandleFunc("/Users/LogIn", logIn)                  //.Methods("POST")
+	r.HandleFunc("/Notes/Search/", search)               //.Methods("POST")
+	r.HandleFunc("/Notes/Analyse/{NoteID}", analyseNote) //.Methods("POST")
+	r.HandleFunc("/Notes/Share/{NoteID}", shareNote)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -114,6 +115,15 @@ func setupDB() {
 		FOREIGN KEY (UserID) REFERENCES "User"(UserID)
 		);`
 
+	createNoteAccessQuery := `CREATE TABLE IF NOT EXISTS NoteAccess (
+		NoteAccessID SERIAL PRIMARY KEY,
+		NoteID INT,
+		UserID INT,
+		Read BOOL,
+		Write BOOL,
+		FOREIGN KEY (NoteID) REFERENCES Note(NoteID),
+		FOREIGN KEY (UserID) REFERENCES "User"(UserID)
+	);`
 	//Execute queries
 	_, err := db.Exec(createUserTableQuery)
 	if err != nil {
@@ -121,6 +131,11 @@ func setupDB() {
 	}
 
 	_, err = db.Exec(createNoteTableQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(createNoteAccessQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -205,12 +220,12 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	t, err := template.ParseFiles("userhome.html")
+	t, err := template.ParseFiles("entproject\\userhome.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query(`SELECT * FROM note WHERE note.userid = ` + params["UserID"])
+	rows, err := db.Query(`SELECT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT OUTER JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR noteaccess.read = true`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -240,7 +255,7 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("createnote.html")
+	t, err := template.ParseFiles("entproject\\createnote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -288,7 +303,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("updatenote.html")
+	t, err := template.ParseFiles("entproject\\updatenote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -330,7 +345,7 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 
 // Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("createaccount.html")
+	t, err := template.ParseFiles("entproject\\createaccount.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -356,7 +371,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 		newUser.UserID = userID
 
-		t2, err := template.ParseFiles("accountcreated.html")
+		t2, err := template.ParseFiles("entproject\\accountcreated.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -422,7 +437,7 @@ func checkPassword(password string, userID int) bool {
 }
 
 func logIn(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("logintemplate.html")
+	t, err := template.ParseFiles("entproject\\logintemplate.html")
 
 	if err != nil {
 		log.Fatal(err)
@@ -625,12 +640,12 @@ func addFoundNote(note Note) {
 // 	return false //not found
 // }
 
-func contains(txt string, pattern string) int {
-	flag := 0
+func contains(txt string, pattern string) bool {
+
 	if !strings.Contains(txt, pattern) {
-		flag = -1
+		return false
 	}
-	return flag
+	return true
 }
 
 //fully working but not using binary
@@ -680,24 +695,125 @@ func search(w http.ResponseWriter, r *http.Request) {
 }
 
 func analyseNote(w http.ResponseWriter, r *http.Request) {
+	// count := 0
+
+	// var input Note
+	// _ = json.NewDecoder(r.Body).Decode(&input)
+
+	// rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// //for each row print ln - need to change to html list at some point
+	// for rows.Next() {
+	// 	count++
+	// }
+	// err = rows.Err()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// json.NewEncoder(w).Encode(count)
 	count := 0
-
-	var input Note
-	_ = json.NewDecoder(r.Body).Decode(&input)
-
-	rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
+	params := mux.Vars(r)
+	t, err := template.ParseFiles("entproject\\analyseNote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//for each row print ln - need to change to html list at some point
-	for rows.Next() {
-		count++
+	if r.Method == "POST" {
+		var input string
+		var contents string
+
+		input = r.FormValue("search")
+
+		rows, err := db.Query("SELECT note.contents FROM Note WHERE Note.Noteid = " + params["NoteID"])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//for each row print ln - need to change to html list at some point
+		for rows.Next() {
+			err = rows.Scan(&contents)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
+
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		count = strings.Count(contents, input)
+
 	}
-	err = rows.Err()
+
+	err = t.Execute(w, struct {
+		NoteID string
+		Count  int
+	}{params["NoteID"], count})
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.NewEncoder(w).Encode(count)
 
+}
+
+func shareNote(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+
+	t, err := template.ParseFiles("entproject\\share.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if r.Method == "POST" {
+		var newNoteAccess NoteAccess
+
+		newNoteAccess.UserID, err = strconv.Atoi(r.FormValue("userid"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		newNoteAccess.NoteID, err = strconv.Atoi(params["NoteID"])
+		if err != nil {
+			log.Fatal(err)
+		}
+		readvalue := r.FormValue("readaccess")
+		if readvalue == "on" {
+			newNoteAccess.Read = true
+		} else {
+			newNoteAccess.Read = false
+		}
+		writevalue := r.FormValue("writeaccess")
+		if writevalue == "on" {
+			newNoteAccess.Write = true
+			newNoteAccess.Read = true
+		} else {
+			newNoteAccess.Write = false
+		}
+
+		//Prepare query
+		query := `INSERT INTO NoteAccess (UserID, NoteID, Read, Write) VALUES ($1, $2, $3, $4)`
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = stmt.Exec(newNoteAccess.UserID, newNoteAccess.NoteID, newNoteAccess.Read, newNoteAccess.Write)
+		if err != nil {
+			log.Fatal(err)
+		}
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+	}
+
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+
+	}
 }

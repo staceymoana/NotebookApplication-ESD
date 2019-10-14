@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>Analyse</title>
+
+    <style>
+        * {
+      font-family: arial, sans-serif;
+    }
+
+    </style>
+
+</head>
+
+<body>
+    <h2>Analyse Note</h2> <hr>
+    <h3>Analyse how many time the given text pattern is within a note</h3>
+    <h3>Analysing NoteID: {{.NoteID}}</h3>
+
+    <form action="/Notes/Analyse/{{.NoteID}}" method="POST">
+        <label>Search for occurences of:</label><br />
+        <input type="text" name="search"><br />
+        <input type="submit" value="Search" >
+    </form>
+
+    <br>
+
+    <h3>Matching text pattern count: {{.Count}}</h3>
+
+
+        
+
+</body>
+
+
+
+</html>
