@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport">
+    <title>User List</title>
+    
+    <style>
+        table {
+          font-family: arial, sans-serif;
+          border-collapse: collapse;
+          width: 100%;
+        }
+        
+        td, th {
+          border: 1px solid #dddddd;
+          text-align: left;
+          padding: 8px;
+        }
+        
+        tr:nth-child(even) {
+          background-color:  lightblue;
+        }
+    </style>
+
+</head>
+<body>
+<h1>User List</h1>
+
+
+<table name="note_table">
+    <thead>
+        <th>UserID</th>
+        <th>GivenName</th>
+        <th>Edit</th>
+        
+    </thead>
+    <tbody>
+    {{range $value := .}}
+    <tr>
+      <td>{{$value.UserID}}</td>
+      <td>{{$value.GivenName}}</td>
+      <td><button type="button" onclick="location.href = '/Notes/EditAccess/{{$value.NoteID}}';">Edit</button></td>
+    </tr>
+
+    {{end}}
+  </tbody>
+    
+</table>
+
+</body>
+</html>
