@@ -31,7 +31,8 @@
 <table name="note_table">
     <thead>
         <th>UserID</th>
-        <th>GivenName</th>
+        <th>Read</th>
+        <th>Write</th>
         <th>Edit</th>
         
     </thead>
@@ -39,7 +40,8 @@
     {{range $value := .}}
     <tr>
       <td>{{$value.UserID}}</td>
-      <td>{{$value.GivenName}}</td>
+      <td>{{$value.Read}}</td>
+      <td>{{$value.Write}}</td>
       <td><button type="button" onclick="location.href = '/Notes/EditAccess/{{$value.NoteID}}';">Edit</button></td>
     </tr>
 

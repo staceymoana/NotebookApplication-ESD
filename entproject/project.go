@@ -78,6 +78,7 @@ func main() {
 	r.HandleFunc("/Notes/Search/", search)               //.Methods("POST")
 	r.HandleFunc("/Notes/Analyse/{NoteID}", analyseNote) //.Methods("POST")
 	r.HandleFunc("/Notes/Share/{NoteID}", shareNote)
+	r.HandleFunc("/Notes/ViewAccess/{NoteID}", access)
 	r.HandleFunc("/Notes/EditAccess/{NoteID}", editAccess)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
@@ -867,6 +868,11 @@ func access(w http.ResponseWriter, r *http.Request) {
 
 	var uservalue int
 
+	t, err := template.ParseFiles("entproject\\access.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
 	if err != nil {
 		log.Fatal(err)
@@ -884,19 +890,26 @@ func access(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	matching, err := db.Query(`SELECT u.userid, u.givenname FROM "User" as u Left Outer Join NoteAccess ON u.userid = NoteAccess.userid Left Outer Join Note on noteaccess.noteid = note.noteid WHERE note.noteid = 9 AND noteaccess.read = true `)
+	matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na Left Outer Join Note on na.noteid = note.noteid WHERE note.noteid =` + params["NoteID"] + `AND na.read = true`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	var matches []NoteAccess
+	var note NoteAccess
+
 	for matching.Next() {
 
-		err = rows.Scan(&uservalue)
+		err = matching.Scan(&note.UserID, &note.NoteID, &note.Read, &note.Write)
 		if err != nil {
 			log.Fatal(err)
 		}
+		matches = append(matches, note)
 	}
-
+	err = t.Execute(w, matches)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func editAccess(w http.ResponseWriter, r *http.Request) {
@@ -925,7 +938,7 @@ func editAccess(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("entproject\\access.html")
+	t, err := template.ParseFiles("entproject\\editaccess.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -948,7 +961,7 @@ func editAccess(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//Prepare query
-		query := `UPDATE NoteAccess SET read = $1, write = $2 `
+		query := `UPDATE NoteAccess SET read = $1, write = $2 WHERE noteaccess.noteid =` + params["NoteID"]
 		stmt, err := db.Prepare(query)
 		if err != nil {
 			log.Fatal(err)
