@@ -4,7 +4,65 @@
 	<meta charset="UTF-8">
 	<meta name="viewport">
 	<title>Create Account</title>
-</head>
+    <style>
+		* {
+		  font-family: arial, sans-serif;
+		}
+	
+		table {
+	
+		  border-collapse: collapse;
+		  width: 100%;
+		}
+	
+		td,
+		th {
+		  border: 1px solid #dddddd;
+		  text-align: left;
+		  padding: 8px;
+		}
+	
+		tr:nth-child(even) {
+		  background-color: lightblue;
+		}
+	
+		.topnav {
+		  background-color: #333;
+		  overflow: hidden;
+		}
+	
+		.topnav a {
+		  float: left;
+		  color: #f2f2f2;
+		  text-align: center;
+		  padding: 14px 16px;
+		  text-decoration: none;
+		  font-size: 17px;
+		}
+	
+		.topnav a:hover {
+	
+		  color: lightblue;
+		}
+	
+		.topnav a.active {
+		  background-color: lightblue;
+		  color: black;
+		}
+	  </style>
+  
+  </head>
+  
+  <header>
+	<div class="topnav">
+	  <a class="active" href="#home">Home</a>
+	  <a onclick="location.href = '/Users';">User List</a>
+	  <a onclick="location.href = '/Notes/Search/';">Search</a>
+	  <a onclick="location.href = '/Notes/Create/';">Create Note</a>
+  
+	</div>
+  </header>
+  
 <body>
 <h1>Create Account</h1>
 <form action="" method="POST">

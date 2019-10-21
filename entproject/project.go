@@ -227,7 +227,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query(`SELECT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT OUTER JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR noteaccess.read = true`)
+	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR noteaccess.read = true`)
 	if err != nil {
 		log.Fatal(err)
 	}
