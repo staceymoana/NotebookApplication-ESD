@@ -57,9 +57,9 @@
   
   <header>
     <div class="topnav">
-      <a class="active" href="#home">Home</a>
+      <a href="#home">Home</a>
       <a onclick="location.href = '/Users';">User List</a>
-      <a onclick="location.href = '/Notes/Search/';">Search</a>
+      <a class="active" onclick="location.href = '/Notes/Search/';">Search</a>
       <a onclick="location.href = '/Notes/Create/';">Create Note</a>
   
     </div>
@@ -75,36 +75,28 @@
         <input type="submit" value="Search" >
     </form>
 
+  <table name="note_table">
+      <thead>
+          <th>NoteID</th>
+          <th>Title</th>
+          <th>Contents</th>
+          <th>Date Created</th>
+          <th>Date Updated</th>
+      </thead>
+      <tbody>
+          
+          {{range $value := .}}
+          <tr>
+              <td>{{$value.NoteID}}</td>
+              <td>{{$value.Title}}</td>
+              <td>{{$value.Contents}}</td>
+              <td>{{$value.DateCreated}}</td>
+              <td>{{$value.DateUpdated}}</td>
+          </tr>
 
-    
-
-
-        <table name="note_table">
-            <thead>
-                <th>NoteID</th>
-                <th>Title</th>
-                <th>Contents</th>
-                <th>Date Created</th>
-                <th>Date Updated</th>
-            </thead>
-            <tbody>
-                
-                {{range $value := .}}
-                <tr>
-                    <td>{{$value.NoteID}}</td>
-                    <td>{{$value.Title}}</td>
-                    <td>{{$value.Contents}}</td>
-                    <td>{{$value.DateCreated}}</td>
-                    <td>{{$value.DateUpdated}}</td>
-                </tr>
-
-                {{end}}
-            </tbody>
-
-        </table>
+          {{end}}
+      </tbody>
+  </table>
 
 </body>
-
-
-
 </html>
