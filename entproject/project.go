@@ -287,6 +287,21 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var settings []SharedSettings
+	var setting SharedSettings
+
+	rows, err := db.Query(`SELECT DISTINCT name FROM SharedSettings WHERE OwnerID = ` + cookie.Value)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&setting.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		settings = append(settings, setting)
+	}
 
 	if r.Method == "POST" {
 		var newNote Note
@@ -302,20 +317,47 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		newNote.DateUpdated = date
 
 		//Prepare query
-		query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5)`
+		query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5) RETURNING NoteID;`
 		stmt, err := db.Prepare(query)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		_, err = stmt.Exec(newNote.UserID, newNote.Title, newNote.Contents, newNote.DateCreated, newNote.DateUpdated)
+		noteID := 0
+		err = stmt.QueryRow(newNote.UserID, newNote.Title, newNote.Contents, newNote.DateCreated, newNote.DateUpdated).Scan(&noteID)
 		if err != nil {
 			log.Fatal(err)
+		}
+		newNote.NoteID = noteID
+
+		selectedSetting := r.FormValue("settingSelect")
+		//var settings []SharedSettings
+		var setting SharedSettings
+
+		rows, err := db.Query(`SELECT SharedSettings.SharedUserID, SharedSettings.Read, SharedSettings.Write FROM SharedSettings WHERE OwnerID = ` + cookie.Value + `AND SharedSettings.Name = ` + selectedSetting)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for rows.Next() {
+			err = rows.Scan(&setting.SharedUserID, &setting.Read, &setting.Write)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//settings = append(settings, setting)
+			query := `INSERT INTO NoteAccess (NoteID, UserID, Read, Write) VALUES ($1, $2, $3, $4)`
+			stmt, err := db.Prepare(query)
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = stmt.Exec(noteID, setting.SharedUserID, setting.Read, setting.Write)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	err = t.Execute(w, nil)
+	err = t.Execute(w, settings)
 	if err != nil {
 		log.Fatal(err)
 

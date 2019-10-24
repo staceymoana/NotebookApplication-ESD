@@ -69,6 +69,12 @@
     <input type="text" name="title"><br />
     <label>Content:</label><br />
     <textarea name="content" rows="10" cols="50"></textarea><br />
+    <select name="settingSelect">
+        <option name="None">None</option>
+        {{range $value := .}}
+        <option name="{{$value.Name}}">{{$value.Name}}</option>
+        {{end}}
+    </select><br>
     <input type="submit" value="Create Note">
 </form>
 </body>
