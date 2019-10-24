@@ -331,10 +331,11 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 		newNote.NoteID = noteID
 
 		selectedSetting := r.FormValue("settingSelect")
+		log.Println(selectedSetting)
 		//var settings []SharedSettings
 		var setting SharedSettings
 
-		rows, err := db.Query(`SELECT SharedSettings.SharedUserID, SharedSettings.Read, SharedSettings.Write FROM SharedSettings WHERE OwnerID = ` + cookie.Value + `AND SharedSettings.Name = ` + selectedSetting)
+		rows, err := db.Query(`SELECT SharedSettings.SharedUserID, SharedSettings.Read, SharedSettings.Write FROM SharedSettings WHERE OwnerID = ` + cookie.Value + `AND SharedSettings.Name = '` + selectedSetting + `'`)
 		if err != nil {
 			log.Fatal(err)
 		}
