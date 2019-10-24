@@ -63,32 +63,11 @@
 
   </div>
 </header>
-
 <body>
-<h1>User List</h1>
-
-
-<table name="note_table">
-    <thead>
-        <th>UserID</th>
-        <th>Read</th>
-        <th>Write</th>
-        <th>Edit</th>
-        
-    </thead>
-    <tbody>
-    {{range $value := .}}
-    <tr>
-      <td>{{$value.UserID}}</td>
-      <td>{{$value.Read}}</td>
-      <td>{{$value.Write}}</td>
-      <td><button type="button" onclick="location.href = '/Notes/EditAccess/{{$value.NoteID}}';">Edit</button></td>
-    </tr>
-
-    {{end}}
-  </tbody>
-    
-</table>
-<button type="button" onclick="location.href = '/Notes/CreateSharedSetting/{{$value.NoteID}}';">Save New Shared Settings</button>  
+    <form>
+        <label>Enter a name for these settings:</label><br>
+        <input type="text" name="settingName"><br>
+        <input type="submit" value="Save">
+    </form>
 </body>
 </html>

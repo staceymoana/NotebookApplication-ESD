@@ -89,6 +89,7 @@ func main() {
 	r.HandleFunc("/Notes/Share/{NoteID}", shareNote)
 	r.HandleFunc("/Notes/ViewAccess/{NoteID}", access)
 	r.HandleFunc("/Notes/EditAccess/{NoteID}", editAccess)
+	r.HandleFunc("/Notes/CreateSharedSetting/{NoteID}", saveSharedSettingOnNote)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
