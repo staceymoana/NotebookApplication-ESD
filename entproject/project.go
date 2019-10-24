@@ -959,7 +959,7 @@ func access(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na Left Outer Join Note on na.noteid = note.noteid WHERE note.noteid =` + params["NoteID"] + `AND na.read = true`)
+	matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na Inner Join Note on na.noteid = note.noteid WHERE note.noteid =` + params["NoteID"] + `AND na.read = true`)
 	if err != nil {
 		log.Fatal(err)
 	}
