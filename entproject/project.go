@@ -136,6 +136,17 @@ func setupDB() {
 		FOREIGN KEY (NoteID) REFERENCES Note(NoteID),
 		FOREIGN KEY (UserID) REFERENCES "User"(UserID)
 	);`
+
+	createSharedSettingsQuery := `CREATE TABLE IF NOT EXISTS SharedSettings  (
+		SharedSettingsID SERIAL PRIMARY KEY,
+		OwnerID INT, 
+		SharedUserID INT,
+		Read bool,
+		Write bool,
+		Name VARCHAR(30),
+		FOREIGN KEY (OwnerID) REFERENCES "User"(UserID)
+		
+	);`
 	//Execute queries
 	_, err := db.Exec(createUserTableQuery)
 	if err != nil {
@@ -148,6 +159,11 @@ func setupDB() {
 	}
 
 	_, err = db.Exec(createNoteAccessQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(createSharedSettingsQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -998,20 +1014,45 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
-	var settings []SharedSettings
-	var setting SharedSettings
-
-	rows, err := db.Query(`SELECT n.userid as "owner", na.userid, na.read, na.write  FROM NoteAccess as na INNER JOIN Note as n ON na.Noteid = n.noteid WHERE N.noteid = ` + params["NoteID"])
-
+	t, err := template.ParseFiles("entproject\\createSharedSetting.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	for rows.Next() {
 
-		err = rows.Scan(&setting.OwnerID, &setting.SharedUserID, &setting.Read, &setting.Write)
+	if r.Method == "POST" {
+
+		//var settings []SharedSettings
+		var setting SharedSettings
+
+		setting.Name = r.FormValue("settingName")
+
+		rows, err := db.Query(`SELECT n.userid as "owner", na.userid, na.read, na.write  FROM NoteAccess as na INNER JOIN Note as n ON na.Noteid = n.noteid WHERE N.noteid = ` + params["NoteID"])
+
 		if err != nil {
 			log.Fatal(err)
 		}
-		settings = append(settings, setting)
+		for rows.Next() {
+
+			err = rows.Scan(&setting.OwnerID, &setting.SharedUserID, &setting.Read, &setting.Write)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//settings = append(settings, setting)
+			query := `INSERT INTO SharedSettings (OwnerID, SharedUserID, Read, Write, Name) VALUES ($1, $2, $3, $4, $5)`
+			stmt, err := db.Prepare(query)
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = stmt.Exec(setting.OwnerID, setting.SharedUserID, setting.Read, setting.Write, setting.Name)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
 	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
