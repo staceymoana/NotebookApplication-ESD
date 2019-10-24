@@ -39,6 +39,15 @@ type NoteAccess struct {
 	Write        bool `json: write`
 }
 
+type SharedSettings struct {
+	SharedSettingsID int
+	OwnerID          int
+	SharedUserID     int
+	Read             bool
+	Write            bool
+	Name             string
+}
+
 var notes []Note
 var users []User
 
@@ -978,5 +987,30 @@ func editAccess(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 
+	}
+}
+
+func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+
+	var settings []SharedSettings
+	var setting SharedSettings
+
+	rows, err := db.Query(`SELECT n.userid as "owner", na.userid, na.read, na.write  FROM NoteAccess as na INNER JOIN Note as n ON na.Noteid = n.noteid WHERE N.noteid = ` + params["NoteID"])
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+
+		err = rows.Scan(&setting.OwnerID, &setting.SharedUserID, &setting.Read, &setting.Write)
+		if err != nil {
+			log.Fatal(err)
+		}
+		settings = append(settings, setting)
 	}
 }
