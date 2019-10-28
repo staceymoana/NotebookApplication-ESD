@@ -532,6 +532,11 @@ func checkPassword(password string, userID int) bool {
 }
 
 func logIn(w http.ResponseWriter, r *http.Request) {
+	cookie := checkLoggedIn(r)
+
+	if cookie != nil {
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+	}
 	t, err := template.ParseFiles("entproject\\logintemplate.html")
 
 	if err != nil {
