@@ -56,7 +56,7 @@
 
 <header>
   <div class="topnav">
-    <a class="active" href="#home">Home</a>
+    <a class="active" onclick="location.href = '/Users/Notes/' + document.cookie.split('=')[1];">Home</a>
     <a onclick="location.href = '/Users';">User List</a>
     <a onclick="location.href = '/Notes/Search/';">Search</a>
     <a onclick="location.href = '/Notes/Create/';">Create Note</a>
@@ -76,20 +76,34 @@
         <th>Edit</th>
         
     </thead>
-    <tbody>
     {{range $value := .}}
-    <tr>
+    <tbody on="setNoteID('{{$value.NoteID}}')">
+    
+    <tr >
       <td>{{$value.UserID}}</td>
       <td>{{$value.Read}}</td>
       <td>{{$value.Write}}</td>
       <td><button type="button" onclick="location.href = '/Notes/EditAccess/{{$value.NoteID}}';">Edit</button></td>
     </tr>
-
+    
     <tr><button type="button" onclick="location.href = '/Notes/CreateSharedSetting/{{$value.NoteID}}';">Save New Shared Settings</button>  </tr>
     {{end}}
   </tbody>
     
 </table>
+<button type="button" onclick="location.href = '/Notes/CreateSharedSetting/' + getNoteID();">Save New Shared Settings</button>
 
 </body>
+<script>
+var noteid = 0;
+
+function setNoteID(id){
+  noteid = id;
+}
+
+function getNoteID(){
+  return noteid;
+}
+
+</script>
 </html>
