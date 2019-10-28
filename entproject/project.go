@@ -197,6 +197,10 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
 	t, err := template.ParseFiles("entproject\\UserList.html")
 	if err != nil {
 		log.Fatal(err)
@@ -742,6 +746,11 @@ func contains(txt string, pattern string) bool {
 //fully working but not using binary
 func search(w http.ResponseWriter, r *http.Request) {
 
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+
 	t, err := template.ParseFiles("entproject\\searchedNotes.html")
 	if err != nil {
 		log.Fatal(err)
@@ -807,6 +816,12 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(count)
 	count := 0
 	params := mux.Vars(r)
+
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+
 	t, err := template.ParseFiles("entproject\\analyseNote.html")
 	if err != nil {
 		log.Fatal(err)
