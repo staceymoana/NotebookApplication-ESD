@@ -90,6 +90,7 @@ func main() {
 	r.HandleFunc("/Notes/ViewAccess/{NoteID}", access)
 	r.HandleFunc("/Notes/EditAccess/{NoteID}", editAccess)
 	r.HandleFunc("/Notes/CreateSharedSetting/{NoteID}", saveSharedSettingOnNote)
+	r.HandleFunc("/Users/Logout", logOut)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -1131,4 +1132,19 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+}
+
+func logOut(w http.ResponseWriter, r *http.Request) {
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:    "logged-in",
+		MaxAge:  -1,
+		Expires: time.Now().Add(-100 * time.Hour), // Set expires for older versions of IE
+		Path:    "/",
+	})
+
+	http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 }
