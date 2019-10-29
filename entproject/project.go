@@ -379,8 +379,9 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var writevalue bool
+	id := ""
 
-	rows, err := db.Query(`SELECT write FROM noteaccess WHERE noteaccess.noteid = ` + params["NoteID"])
+	rows, err := db.Query(`SELECT noteaccess.write From Noteaccess WHERE noteaccess.noteid = ` + params["NoteID"])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -394,7 +395,19 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	if writevalue == false {
+	noterow, err := db.Query(`SELECT note.userid FROM note WHERE note.noteid = ` + params["NoteID"])
+
+	for noterow.Next() {
+
+		err = noterow.Scan(&id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}
+
+	log.Println(id)
+	if id != cookie.Value && (writevalue == false) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
