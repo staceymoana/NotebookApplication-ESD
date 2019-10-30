@@ -551,6 +551,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	if cookie != nil {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
+
 	t, err := template.ParseFiles("entproject\\logintemplate.html")
 
 	if err != nil {
@@ -580,19 +581,12 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 					Path:  "/",
 				}
 			}
-
 			http.SetCookie(w, cookie)
 			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-
-			//direct to user notes?
 		} else {
-			log.Println("Failed log in") //http error instead?
+			log.Println("Failed log in")
 			return
 		}
-		// } else {
-		// 	log.Println("Failed log in") //http error instead?
-		// 	return
-		// }
 	} else {
 		err = t.Execute(w, nil)
 		if err != nil {
@@ -609,21 +603,6 @@ func checkLoggedIn(r *http.Request) *http.Cookie {
 	}
 	return cookie
 }
-
-// func insertionSort(arr []Note) []Note {
-// 	for i := 1; i < len(arr); i++ {
-// 		key := len(arr[i].Contents)
-// 		ts := arr[i]
-// 		j := i - 1
-// 		for j >= 0 && key < len(arr[j].Contents) {
-// 			arr[j+1] = arr[j]
-// 			j -= 1
-// 		}
-// 		arr[j+1] = ts
-// 	}
-// 	fmt.Println(arr)
-// 	return arr
-// }
 
 var foundnotes []Note
 
@@ -643,116 +622,6 @@ func addFoundNote(note Note) {
 	}
 
 }
-
-// func searchPartial(w http.ResponseWriter, r *http.Request) { //T is the lastname you are searching for
-// 	foundnotes = nil
-// 	sortednotes := insertionSort(notes)
-// 	low := 0
-// 	high := len(sortednotes) - 1
-// 	mid := 0
-// 	var mid_value Note
-// 	var input Note
-// 	_ = json.NewDecoder(r.Body).Decode(&input)
-
-// 	for low <= high {
-// 		mid = low + (high-low)/2     //middle of the list
-// 		mid_value = sortednotes[mid] //get item to check if matches with T
-
-// 		if mid_value.Contents == input.Contents || (mysearch(mid_value.Contents, input.Contents) == 0) {
-// 			addFoundNote(mid_value)
-// 			json.NewEncoder(w).Encode(foundnotes)
-// 			return
-// 			//json.NewEncoder(w).Encode(foundnotes)
-// 			//we have matched the target T
-
-// 		} else if (mid_value.Contents < input.Contents) || (mysearch(mid_value.Contents, input.Contents) == -1) {
-// 			low = mid + 1 //left/lower side of the middle
-
-// 		} else {
-// 			high = mid - 1 //right/upper side of the middle
-// 		}
-// 	}
-// 	json.NewEncoder(w).Encode(foundnotes)
-// 	return //not found
-// }
-
-// //close to working but still skips over some elements
-// func partialSearch(w http.ResponseWriter, r *http.Request) {
-// 	foundnotes = nil
-// 	sortednotes := insertionSort(notes)
-// 	lowerlow := 0
-// 	higherhigh := len(sortednotes) - 1
-// 	mid := lowerlow + ((higherhigh - lowerlow) >> 1)
-
-// 	var input Note
-// 	_ = json.NewDecoder(r.Body).Decode(&input)
-
-// 	foundAllLower := false
-// 	for foundAllLower == false {
-// 		if searchLower(sortednotes, input.Contents, lowerlow, mid) == false {
-// 			foundAllLower = true
-// 		}
-// 	}
-// 	foundAllHigher := false
-// 	for foundAllHigher == false {
-// 		if searchHigher(sortednotes, input.Contents, mid+1, higherhigh) == false {
-// 			foundAllHigher = true
-// 		}
-// 	}
-
-// 	json.NewEncoder(w).Encode(foundnotes)
-// }
-
-// func searchLower(sortednotes []Note, input string, low int, high int) bool {
-
-// 	for low <= high {
-// 		mid := low + ((high - low) >> 1) //middle of the list
-// 		mid_value := sortednotes[mid]
-
-// 		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
-// 			addFoundNote(mid_value)
-
-// 		} // else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
-// 		// 	low = mid + 1 //left/lower side of the middle
-
-// 		// } else {
-// 		// 	high = mid - 1 //right/upper side of the middle
-// 		// }
-
-// 		if len(sortednotes[mid].Contents) >= len(input) {
-// 			return searchLower(sortednotes, input, low, mid-1)
-// 		} else {
-// 			return searchLower(sortednotes, input, mid+1, high)
-// 		}
-// 	}
-// 	return false //not found
-// }
-
-// func searchHigher(sortednotes []Note, input string, low int, high int) bool {
-
-// 	for low <= high {
-// 		mid := low + ((high - low) >> 1) //middle of the list
-// 		mid_value := sortednotes[mid]
-
-// 		if mid_value.Contents == input || (contains(mid_value.Contents, input) == 0) {
-// 			addFoundNote(mid_value)
-
-// 			//return true
-// 		} //else if (mid_value.Contents < input) || (mysearch(mid_value.Contents, input) == -1) {
-// 		// 	low = mid + 1 //left/lower side of the middle
-
-// 		// } else {
-// 		// 	high = mid - 1 //right/upper side of the middle
-// 		// }
-
-// 		if len(sortednotes[mid].Contents) > len(input) {
-// 			return searchHigher(sortednotes, input, low, mid-1)
-// 		} else {
-// 			return searchHigher(sortednotes, input, mid+1, high)
-// 		}
-// 	}
-// 	return false //not found
-// }
 
 func contains(txt string, pattern string) bool {
 
@@ -789,14 +658,12 @@ func search(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		//for each row print ln - need to change to html list at some point
 		for rows.Next() {
 
 			err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
 			if err != nil {
 				log.Fatal(err)
 			}
-			//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
 			searchnotes = append(searchnotes, note)
 		}
 		err = rows.Err()
@@ -814,25 +681,6 @@ func search(w http.ResponseWriter, r *http.Request) {
 }
 
 func analyseNote(w http.ResponseWriter, r *http.Request) {
-	// count := 0
-
-	// var input Note
-	// _ = json.NewDecoder(r.Body).Decode(&input)
-
-	// rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input.Contents + "%'")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// //for each row print ln - need to change to html list at some point
-	// for rows.Next() {
-	// 	count++
-	// }
-	// err = rows.Err()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// json.NewEncoder(w).Encode(count)
 	count := 0
 	params := mux.Vars(r)
 
@@ -857,14 +705,11 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		//for each row print ln - need to change to html list at some point
 		for rows.Next() {
 			err = rows.Scan(&contents)
 			if err != nil {
 				log.Fatal(err)
 			}
-			//fmt.Println(noteID, userID, title, contents, dateCreated, dateUpdated)
-
 		}
 		err = rows.Err()
 		if err != nil {
@@ -1098,7 +943,6 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 
-		//var settings []SharedSettings
 		var setting SharedSettings
 
 		setting.Name = r.FormValue("settingName")
@@ -1114,7 +958,6 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			//settings = append(settings, setting)
 			query := `INSERT INTO SharedSettings (OwnerID, SharedUserID, Read, Write, Name) VALUES ($1, $2, $3, $4, $5)`
 			stmt, err := db.Prepare(query)
 			if err != nil {
