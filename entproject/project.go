@@ -784,7 +784,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(input)
 
-		rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input + "%'")
+		rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input + "%'" + " OR note.Title LIKE " + "'%" + input + "%'")
 		if err != nil {
 			log.Fatal(err)
 		}
