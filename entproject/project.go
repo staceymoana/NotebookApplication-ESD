@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -57,7 +57,7 @@ func main() {
 	//Router
 	r := mux.NewRouter()
 
-	//mock data
+	/*//mock data
 	//mock users
 	users = append(users, User{UserID: 1, GivenName: "John", FamilyName: "Snow", Password: "hello123"})
 	users = append(users, User{UserID: 2, GivenName: "Bob", FamilyName: "Williams", Password: "hi"})
@@ -69,19 +69,19 @@ func main() {
 	notes = append(notes, Note{NoteID: 5, UserID: 2, Title: "my note 5", Contents: "hi dog", DateCreated: time.Now(), DateUpdated: time.Now()})
 	notes = append(notes, Note{NoteID: 6, UserID: 2, Title: "my note 6", Contents: "pup hi note", DateCreated: time.Now(), DateUpdated: time.Now()})
 	notes = append(notes, Note{NoteID: 7, UserID: 1, Title: "my note 7", Contents: "hello doggo", DateCreated: time.Now(), DateUpdated: time.Now()})
-	notes = append(notes, Note{NoteID: 8, UserID: 2, Title: "my note 8", Contents: "note is world", DateCreated: time.Now(), DateUpdated: time.Now()})
+	notes = append(notes, Note{NoteID: 8, UserID: 2, Title: "my note 8", Contents: "note is world", DateCreated: time.Now(), DateUpdated: time.Now()})*/
 
 	//set up db
 	setupDB()
 	defer db.Close()
 	//Route Handlers
-	r.HandleFunc("/Notes", getNotes).Methods("GET")
-	r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
+	//r.HandleFunc("/Notes", getNotes).Methods("GET")
+	//r.HandleFunc("/Notes/{NoteID}", getNote).Methods("GET")
 	r.HandleFunc("/Users/Notes/{UserID}", getUserNotes).Methods("GET")
 	r.HandleFunc("/Notes/Create/", createNote)         //.Methods("POST")
 	r.HandleFunc("/Notes/Update/{NoteID}", updateNote) //.Methods("PUT")
-	r.HandleFunc("/Notes/{NoteID}", deleteNote).Methods("DELETE")
-	r.HandleFunc("/Users/Create", createUser) //.Methods("POST")
+	r.HandleFunc("/Notes/Delete/{NoteID}", deleteNote) //.Methods("DELETE")
+	r.HandleFunc("/Users/Create", createUser)          //.Methods("POST")
 	r.HandleFunc("/Users", getUsers).Methods("GET")
 	r.HandleFunc("/Users/LogIn", logIn)                  //.Methods("POST")
 	r.HandleFunc("/Notes/Search/", search)               //.Methods("POST")
@@ -170,7 +170,8 @@ func setupDB() {
 	}
 }
 
-func getNotes(w http.ResponseWriter, r *http.Request) {
+//Used for Postman
+/*func getNotes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	rows, err := db.Query(`SELECT * FROM Note`)
 	if err != nil {
@@ -195,7 +196,7 @@ func getNotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(notes)
-}
+}*/
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
@@ -230,7 +231,8 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getNote(w http.ResponseWriter, r *http.Request) {
+//Used for Postman
+/*func getNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	rows, err := db.Query(`SELECT * FROM note WHERE note.noteid = ` + params["NoteID"])
@@ -248,7 +250,7 @@ func getNote(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(note)
 
-}
+}*/
 
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
@@ -443,13 +445,52 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func isOwner(w http.ResponseWriter, r *http.Request) bool {
+	cookie := checkLoggedIn(r)
+
+	if cookie != nil {
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+	}
+
+	var uservalue int
+	params := mux.Vars(r)
+
+	rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+
+		err = rows.Scan(&uservalue)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if strconv.Itoa(uservalue) != cookie.Value {
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		return false
+	}
+	return true
+}
+
 func deleteNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	_, err := db.Exec(`DELETE FROM note WHERE note.noteid = ` + params["NoteID"])
+	if isOwner(w, r) {
+		_, err := db.Exec(`DELETE FROM NoteAccess WHERE NoteAccess.noteid = ` + params["NoteID"])
 
-	if err != nil {
-		log.Fatal(err)
+		_, err = db.Exec(`DELETE FROM note WHERE note.noteid = ` + params["NoteID"])
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		cookie := checkLoggedIn(r)
+		if cookie == nil {
+			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		}
+		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 }
 
@@ -497,30 +538,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-
-/*//Check ID exists in db
-func checkUserID(id int) bool {
-	var userID int
-
-	query := `SELECT UserID FROM "User" WHERE UserID = $1;`
-
-	//Prepare query
-	userIDCheck, err := db.Prepare(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = userIDCheck.QueryRow(id).Scan(&userID)
-
-	//if rows are emtpy, no matching userid
-	if err == sql.ErrNoRows {
-		return false
-	}
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	return true
-}*/
 
 //Check password and userid matches and exist in db
 func checkPassword(password string, userID int) bool {
@@ -603,33 +620,6 @@ func checkLoggedIn(r *http.Request) *http.Cookie {
 		return nil
 	}
 	return cookie
-}
-
-var foundnotes []Note
-
-func addFoundNote(note Note) {
-
-	if len(foundnotes) == 0 {
-		foundnotes = append(foundnotes, note)
-	} else {
-		for index := 0; index < len(foundnotes); index++ {
-			if foundnotes[index].Title == note.Title {
-
-				return
-			}
-		}
-		foundnotes = append(foundnotes, note)
-
-	}
-
-}
-
-func contains(txt string, pattern string) bool {
-
-	if !strings.Contains(txt, pattern) {
-		return false
-	}
-	return true
 }
 
 //fully working but not using binary

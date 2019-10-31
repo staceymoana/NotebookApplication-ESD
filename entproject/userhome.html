@@ -81,6 +81,7 @@
       <th>Analyse</th>
       <th>Share</th>
       <th>Edit User Access</th>
+      <th>Delete</th>
     </thead>
     <tbody>
       {{range $value := .}}
@@ -95,6 +96,7 @@
         <td><button type="button" onclick="location.href = '/Notes/Analyse/{{$value.NoteID}}';">Analyse</button></td>
         <td><button type="button" onclick="location.href = '/Notes/Share/{{$value.NoteID}}';">Share</button></td>
         <td><button type="button" onclick="location.href = '/Notes/ViewAccess/{{$value.NoteID}}';">Edit Access</button></td>
+        <td><button type="button" onclick="location.href = '/Notes/Delete/{{$value.NoteID}}';">Delete</button></td>
       </tr>
 
       {{end}}
