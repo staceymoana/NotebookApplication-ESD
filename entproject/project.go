@@ -448,8 +448,8 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	cookie := checkLoggedIn(r)
 
-	if cookie != nil {
-		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
 	var uservalue int
