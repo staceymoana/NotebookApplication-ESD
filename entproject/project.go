@@ -279,6 +279,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
 
 //Create a note
@@ -535,7 +536,7 @@ func checkPassword(password string, userID int) bool {
 
 	err = passwordCheck.QueryRow(password, userID).Scan(&newpass)
 
-	//if rows are emtpy, no matching password
+	//if rows are empty, no matching password
 	if err == sql.ErrNoRows {
 		return false
 	}
