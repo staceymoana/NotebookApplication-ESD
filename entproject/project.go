@@ -198,6 +198,7 @@ func setupDB() {
 	json.NewEncoder(w).Encode(notes)
 }*/
 
+//Gets all users
 func getUsers(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
@@ -252,6 +253,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 
 }*/
 
+//Gets all user notes
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -260,7 +262,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR noteaccess.read = true`)
+	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR (noteaccess.userid = ` + params["UserID"] + ` AND noteaccess.read = true)`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -284,7 +286,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//Create a note
+//Creates a note
 func createNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
@@ -373,6 +375,7 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Updates a note
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -410,7 +413,6 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	log.Println(id)
 	if id != cookie.Value && (writevalue == false) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
@@ -445,6 +447,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Checks whether user logged in is the owner
 func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	cookie := checkLoggedIn(r)
 
@@ -475,6 +478,7 @@ func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+//Deletes a note
 func deleteNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -494,7 +498,7 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Creates a new user
+//Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("entproject\\createaccount.html")
 	if err != nil {
@@ -539,7 +543,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Check password and userid matches and exist in db
+//Check password and userid matches and exist in db when a user logs in
 func checkPassword(password string, userID int) bool {
 	var newpass string
 
@@ -563,6 +567,7 @@ func checkPassword(password string, userID int) bool {
 	return true
 }
 
+//Logs a user in
 func logIn(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 
@@ -614,6 +619,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//Checks whether a user is logged in
 func checkLoggedIn(r *http.Request) *http.Cookie {
 	cookie, err := r.Cookie("logged-in")
 	if err == http.ErrNoCookie {
@@ -671,6 +677,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//Searches a term and displays a count
 func analyseNote(w http.ResponseWriter, r *http.Request) {
 	count := 0
 	params := mux.Vars(r)
@@ -721,6 +728,7 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//Allows a note to be shared to other users
 func shareNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	cookie := checkLoggedIn(r)
@@ -798,6 +806,7 @@ func shareNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Saves new note access settings
 func access(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	cookie := checkLoggedIn(r)
@@ -851,6 +860,7 @@ func access(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Allows a user to edit note access settings
 func editAccess(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	cookie := checkLoggedIn(r)
@@ -920,6 +930,7 @@ func editAccess(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Allows a user to save certain shared settings and set a name for it
 func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	cookie := checkLoggedIn(r)
@@ -968,6 +979,7 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//Logs a user out
 func logOut(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
