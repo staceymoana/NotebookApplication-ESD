@@ -106,7 +106,7 @@ func openDB() (db *sql.DB) {
 	return db
 }
 
-func setupDB() {
+func setupDB() *sql.DB {
 	//Open db from setupDB file
 	db = openDB()
 
@@ -168,6 +168,7 @@ func setupDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return db
 }
 
 //Used for Postman
@@ -228,7 +229,14 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	err = t.Execute(w, users)
 	if err != nil {
 		log.Fatal(err)
+		//return "Could not select users"
 	}
+
+	//return "Users returned"
+
+}
+
+func getUsers_SQL() {
 
 }
 
