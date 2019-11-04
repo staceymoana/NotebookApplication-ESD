@@ -490,11 +490,11 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		cookie := checkLoggedIn(r)
+		/*cookie := checkLoggedIn(r)
 		if cookie == nil {
 			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
-		}
-		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		}*/
+		//http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 }
 
@@ -808,125 +808,130 @@ func shareNote(w http.ResponseWriter, r *http.Request) {
 
 //Saves new note access settings
 func access(w http.ResponseWriter, r *http.Request) {
+	/*
+		cookie := checkLoggedIn(r)
+		if cookie == nil {
+			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		}
+
+		var uservalue int
+
+		t, err := template.ParseFiles("entproject\\access.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for rows.Next() {
+
+			err = rows.Scan(&uservalue)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		if strconv.Itoa(uservalue) != cookie.Value {
+			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		}*/
 	params := mux.Vars(r)
-	cookie := checkLoggedIn(r)
-	if cookie == nil {
-		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
-	}
-
-	var uservalue int
-
-	t, err := template.ParseFiles("entproject\\access.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for rows.Next() {
-
-		err = rows.Scan(&uservalue)
+	if isOwner(w, r) {
+		t, err := template.ParseFiles("entproject\\access.html")
+		matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na Inner Join Note on na.noteid = note.noteid WHERE note.noteid =` + params["NoteID"] + `AND na.read = true`)
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
 
-	if strconv.Itoa(uservalue) != cookie.Value {
-		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-	}
+		var matches []NoteAccess
+		var note NoteAccess
 
-	matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na Inner Join Note on na.noteid = note.noteid WHERE note.noteid =` + params["NoteID"] + `AND na.read = true`)
-	if err != nil {
-		log.Fatal(err)
-	}
+		for matching.Next() {
 
-	var matches []NoteAccess
-	var note NoteAccess
-
-	for matching.Next() {
-
-		err = matching.Scan(&note.UserID, &note.NoteID, &note.Read, &note.Write)
+			err = matching.Scan(&note.UserID, &note.NoteID, &note.Read, &note.Write)
+			if err != nil {
+				log.Fatal(err)
+			}
+			matches = append(matches, note)
+		}
+		err = t.Execute(w, matches)
 		if err != nil {
 			log.Fatal(err)
 		}
-		matches = append(matches, note)
-	}
-	err = t.Execute(w, matches)
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
 //Allows a user to edit note access settings
 func editAccess(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	cookie := checkLoggedIn(r)
-	if cookie == nil {
-		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
-	}
+	/*
 
-	var uservalue int
+		var uservalue int
 
-	rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for rows.Next() {
-
-		err = rows.Scan(&uservalue)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if strconv.Itoa(uservalue) != cookie.Value {
-		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-	}
-
-	t, err := template.ParseFiles("entproject\\editaccess.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if r.Method == "POST" {
-		var newNoteAccess NoteAccess
-
-		readvalue := r.FormValue("readaccess")
-		if readvalue == "on" {
-			newNoteAccess.Read = true
-		} else {
-			newNoteAccess.Read = false
-		}
-		writevalue := r.FormValue("writeaccess")
-		if writevalue == "on" {
-			newNoteAccess.Write = true
-			newNoteAccess.Read = true
-		} else {
-			newNoteAccess.Write = false
-		}
-
-		//Prepare query
-		query := `UPDATE NoteAccess SET read = $1, write = $2 WHERE noteaccess.noteid =` + params["NoteID"]
-		stmt, err := db.Prepare(query)
+		rows, err := db.Query(`SELECT userid FROM note WHERE note.noteid = ` + params["NoteID"] + ` AND note.userid = ` + cookie.Value)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		_, err = stmt.Exec(newNoteAccess.Read, newNoteAccess.Write)
+		for rows.Next() {
+
+			err = rows.Scan(&uservalue)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		if strconv.Itoa(uservalue) != cookie.Value {
+			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		}*/
+	if isOwner(w, r) {
+		cookie := checkLoggedIn(r)
+		if cookie == nil {
+			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		}
+		t, err := template.ParseFiles("entproject\\editaccess.html")
 		if err != nil {
 			log.Fatal(err)
 		}
-		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-	}
 
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Fatal(err)
+		if r.Method == "POST" {
+			var newNoteAccess NoteAccess
 
+			readvalue := r.FormValue("readaccess")
+			if readvalue == "on" {
+				newNoteAccess.Read = true
+			} else {
+				newNoteAccess.Read = false
+			}
+			writevalue := r.FormValue("writeaccess")
+			if writevalue == "on" {
+				newNoteAccess.Write = true
+				newNoteAccess.Read = true
+			} else {
+				newNoteAccess.Write = false
+			}
+
+			//Prepare query
+			query := `UPDATE NoteAccess SET read = $1, write = $2 WHERE noteaccess.noteid =` + params["NoteID"]
+			stmt, err := db.Prepare(query)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			_, err = stmt.Exec(newNoteAccess.Read, newNoteAccess.Write)
+			if err != nil {
+				log.Fatal(err)
+			}
+			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		}
+
+		err = t.Execute(w, nil)
+		if err != nil {
+			log.Fatal(err)
+
+		}
 	}
 }
 
