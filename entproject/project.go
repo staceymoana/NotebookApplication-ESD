@@ -464,10 +464,9 @@ func updateNoteSelectSQL(noteID string) (bool, string) {
 	return writeValue, id
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func updateNoteInsertSQL(title string, contents string, noteID string) bool {
 	var newNote Note
-	//Have to check user has access privileges
+
 	newNote.Title = title
 	newNote.Contents = contents
 
@@ -475,12 +474,14 @@ func updateNoteInsertSQL(title string, contents string, noteID string) bool {
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	//Get todays date
 	date := time.Now()
 	_, err = stmt.Exec(newNote.Title, newNote.Contents, date)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	return true
 }
@@ -502,7 +503,6 @@ func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func isOwnerSQL(noteID string, userID string) int {
 	var userValue int
 
@@ -535,16 +535,17 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func deleteNoteSQL(NoteID string) bool {
 	_, err := db.Exec(`DELETE FROM NoteAccess WHERE NoteAccess.noteid = ` + NoteID)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 
 	_, err = db.Exec(`DELETE FROM note WHERE note.noteid = ` + NoteID)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	return true
 }
@@ -576,7 +577,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func createUserSQL(givenName string, familyName string, password string) User {
 	var newUser User
 	//Assign input values to newUser
@@ -710,7 +710,6 @@ func search(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func searchSQL(searchInput string, userid string) []Note {
 	var searchNotes []Note
 	var input = searchInput
@@ -768,7 +767,6 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func analyseNoteSQL(searchInput string, noteID string) int {
 	count := 0
 	var input string
@@ -779,17 +777,20 @@ func analyseNoteSQL(searchInput string, noteID string) int {
 	rows, err := db.Query("SELECT note.contents FROM Note WHERE Note.Noteid = " + noteID)
 	if err != nil {
 		log.Fatal(err)
+		return 0
 	}
 
 	for rows.Next() {
 		err = rows.Scan(&contents)
 		if err != nil {
 			log.Fatal(err)
+			return 0
 		}
 	}
 	err = rows.Err()
 	if err != nil {
 		log.Fatal(err)
+		return 0
 	}
 
 	count = strings.Count(contents, input)
@@ -887,7 +888,6 @@ func access(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------- NEED TO TEST --------------------------
 func accessSQL(noteID string) []NoteAccess {
 	matching, err := db.Query(`SELECT na.userid, na.noteid, na.Read, na.Write FROM NoteAccess as na INNER JOIN Note on na.noteid = note.noteid WHERE note.noteid =` + noteID + `AND na.read = true`)
 	if err != nil {

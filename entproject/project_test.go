@@ -50,12 +50,25 @@ func TestDatabase(t *testing.T) {
 
 	if db != nil {
 		//assert.Equal(t, "Users returned", getUsers(w, r), "Should return 'Users returned'")
-		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "Should be true")
-		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
-		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
 		assert.NotNil(t, getUsersSQL(), "Should return a list of users")
 		userNotes := getUserNotesSQL("10")
 		assert.NotEmpty(t, userNotes, "Should not be empty")
+
+		assert.True(t, updateNoteInsertSQL("Updated title", "Updated contents", "1"))
+		ownerID := isOwnerSQL("1", "1")
+		assert.NotZero(t, ownerID, "Should not be zero")
+		assert.True(t, deleteNoteSQL("2"), "Should be true")
+		newUser := createUserSQL("New", "User", "password")
+		assert.NotNil(t, newUser, "Should return a user")
+		searchedNotes := searchSQL("content", "1")
+		assert.NotEmpty(t, searchedNotes, "Should not be empty")
+		newAnalyseNote := analyseNoteSQL("content", "1")
+		assert.NotZero(t, newAnalyseNote, "Should not be zero")
+		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "Should be true")
+		newAccess := accessSQL("1")
+		assert.NotEmpty(t, newAccess, "Should not be empty")
+		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
+		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
 	}
 }
 
