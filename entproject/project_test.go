@@ -69,6 +69,12 @@ func TestDatabase(t *testing.T) {
 		assert.NotEmpty(t, newAccess, "Should not be empty")
 		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
 		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
+		settings := createNoteSelectSQL("1")
+		assert.NotEmpty(t, settings, "Should not be empty")
+		assert.True(t, createNoteInsertSQL("1", "test title", "test contents", "none"), "Should be true")
+		writevalue, id := updateNoteSelectSQL("1")
+		assert.True(t, writevalue, "should be true")
+		assert.NotEqual(t, "", id, "id should not be empty")
 	}
 }
 

@@ -351,8 +351,7 @@ func createNoteSelectSQL(userID string) []SharedSettings {
 	return settings
 }
 
-// ----------------------- NEED TO TEST --------------------------
-func createNoteInsertSQL(userID string, title string, content string, selectSetting string) {
+func createNoteInsertSQL(userID string, title string, content string, selectSetting string) bool {
 	var newNote Note
 	var err error
 
@@ -371,12 +370,14 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 
 	var noteID int
 	err = stmt.QueryRow(newNote.UserID, newNote.Title, newNote.Contents, newNote.DateCreated, newNote.DateUpdated).Scan(&noteID)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	newNote.NoteID = noteID
 
@@ -387,23 +388,29 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 	rows, err := db.Query(`SELECT SharedSettings.SharedUserID, SharedSettings.Read, SharedSettings.Write FROM SharedSettings WHERE OwnerID = ` + userID + `AND SharedSettings.Name = '` + selectedSetting + `'`)
 	if err != nil {
 		log.Fatal(err)
+		return false
 	}
 	for rows.Next() {
 		err = rows.Scan(&setting.SharedUserID, &setting.Read, &setting.Write)
 		if err != nil {
 			log.Fatal(err)
+			return false
 		}
 		//settings = append(settings, setting)
 		query := `INSERT INTO NoteAccess (NoteID, UserID, Read, Write) VALUES ($1, $2, $3, $4)`
 		stmt, err := db.Prepare(query)
 		if err != nil {
 			log.Fatal(err)
+			return false
 		}
 		_, err = stmt.Exec(noteID, setting.SharedUserID, setting.Read, setting.Write)
 		if err != nil {
 			log.Fatal(err)
+			return false
 		}
+
 	}
+	return true
 }
 
 //Updates a note
