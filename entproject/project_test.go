@@ -53,6 +53,9 @@ func TestDatabase(t *testing.T) {
 		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "Should be true")
 		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
 		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
+		assert.NotNil(t, getUsersSQL(), "Should return a list of users")
+		userNotes := getUserNotesSQL("10")
+		assert.NotEmpty(t, userNotes, "Should not be empty")
 	}
 }
 

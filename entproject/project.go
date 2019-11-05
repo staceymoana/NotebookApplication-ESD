@@ -202,6 +202,7 @@ func setupDB() *sql.DB {
 }*/
 
 //Gets all users
+
 func getUsers(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
@@ -212,6 +213,17 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+	err = t.Execute(w, users)
+	if err != nil {
+		log.Fatal(err)
+		//return "Could not select users"
+	}
+
+	//return "Users returned"
+
+}
+
+func getUsersSQL() bool {
 	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
 	if err != nil {
 		log.Fatal(err)
@@ -227,19 +239,10 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		users = append(users, user)
 	}
-
-	err = t.Execute(w, users)
-	if err != nil {
-		log.Fatal(err)
-		//return "Could not select users"
+	if len(users) == 0 {
+		return false
 	}
-
-	//return "Users returned"
-
-}
-
-func getUsers_SQL() {
-
+	return true
 }
 
 //Used for Postman
@@ -272,7 +275,18 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params["UserID"] + ` OR (noteaccess.userid = ` + params["UserID"] + ` AND noteaccess.read = true)`)
+	userNotes := getUserNotesSQL(params["UserID"])
+
+	err = t.Execute(w, userNotes)
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
+}
+
+func getUserNotesSQL(params string) []Note {
+	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params + ` OR (noteaccess.userid = ` + params + ` AND noteaccess.read = true)`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -288,12 +302,7 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 		}
 		userNotes = append(userNotes, note)
 	}
-
-	err = t.Execute(w, userNotes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	return userNotes
 }
 
 //Creates a note
@@ -692,7 +701,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	var searchNotes []Note
 
 	if r.Method == "POST" {
-		searchNotes = searchSQL(r.FormValue("search"))
+		searchNotes = searchSQL(r.FormValue("search"), cookie.Value)
 	}
 
 	err = t.Execute(w, searchNotes)
@@ -702,7 +711,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 }
 
 // ----------------------- NEED TO TEST --------------------------
-func searchSQL(searchInput string) []Note {
+func searchSQL(searchInput string, userid string) []Note {
 	var searchNotes []Note
 	var input = searchInput
 
@@ -710,7 +719,7 @@ func searchSQL(searchInput string) []Note {
 
 	fmt.Println(input)
 
-	rows, err := db.Query("SELECT * FROM Note WHERE note.contents LIKE " + "'%" + input + "%'" + " OR note.Title LIKE " + "'%" + input + "%'")
+	rows, err := db.Query("SELECT DISTINCT note.NoteID, note.UserId, note.title, note.contents, note.datecreated, note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE (note.userid = " + userid + " OR (noteaccess.userid = " + userid + " AND noteaccess.read = true)) AND note.contents LIKE " + "'%" + searchInput + "%'" + " OR note.Title LIKE " + "'%" + searchInput + "%'")
 	if err != nil {
 		log.Fatal(err)
 	}
