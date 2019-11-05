@@ -25,6 +25,12 @@ func TestDatabase(t *testing.T) {
 	user.FamilyName = "Snow"
 	user.Password = "hello123"
 
+	var userTwo User
+	userTwo.UserID = 101
+	userTwo.GivenName = "Bob"
+	userTwo.FamilyName = "Ross"
+	userTwo.Password = "password"
+
 	var note Note
 	note.NoteID = 100
 	note.UserID = 100
@@ -33,12 +39,21 @@ func TestDatabase(t *testing.T) {
 	note.DateCreated = time.Now()
 	note.DateUpdated = time.Now()
 
+	var noteAccess NoteAccess
+	noteAccess.NoteAccessID = 100
+	noteAccess.NoteID = 100
+	noteAccess.UserID = 101
+	noteAccess.Read = true
+	noteAccess.Write = true
+
 	db := setupDB()
 
 	if db != nil {
-		assert.Equal(t, "Users returned", getUsers(w, r), "Should return 'Users returned'")
+		//assert.Equal(t, "Users returned", getUsers(w, r), "Should return 'Users returned'")
+		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "Should be true")
+		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
+		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
 	}
-
 }
 
 func TestCheckPassword(t *testing.T) {
