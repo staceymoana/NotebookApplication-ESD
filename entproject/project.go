@@ -671,7 +671,6 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 		} else {
 			var logUser User
 			//convert input to int
-
 			id, err := strconv.Atoi(idvalue)
 			if err != nil {
 				log.Fatal(err)
@@ -679,11 +678,8 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 			//set input data to details
 			logUser.UserID = id
 			logUser.Password = passvalue
-			//log.Println(logUser) //Checking
 
-			//if checkUserID(logUser.UserID) {
 			if checkPassword(logUser.Password, logUser.UserID) {
-				log.Println("Logged in")
 				cookie, err := r.Cookie("logged-in")
 				if err == http.ErrNoCookie {
 					cookie = &http.Cookie{
@@ -695,7 +691,6 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 				http.SetCookie(w, cookie)
 				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 			} else {
-				log.Println("Failed log in")
 				http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 				return
 			}
