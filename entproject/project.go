@@ -415,12 +415,14 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	cookie := checkLoggedIn(r)
+
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
 
-	writeValue, id := updateNoteSelectSQL(params["NoteID"])
+	writeValue, note := updateNoteSelectSQL(params["NoteID"])
+	id := strconv.Itoa(note.NoteID)
 
 	if id != cookie.Value && writeValue == false {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
@@ -435,15 +437,15 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 		updateNoteInsertSQL(r.FormValue("title"), r.FormValue("content"), params["NoteID"])
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
-	err = t.Execute(w, nil)
+	err = t.Execute(w, note)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func updateNoteSelectSQL(noteID string) (bool, string) {
+func updateNoteSelectSQL(noteID string) (bool, Note) {
 	var writeValue bool
-	id := ""
+	var note Note
 
 	rows, err := db.Query(`SELECT noteaccess.write From Noteaccess WHERE noteaccess.noteid = ` + noteID)
 	if err != nil {
@@ -457,15 +459,15 @@ func updateNoteSelectSQL(noteID string) (bool, string) {
 		}
 	}
 
-	noterow, err := db.Query(`SELECT note.userid FROM note WHERE note.noteid = ` + noteID)
+	noterow, err := db.Query(`SELECT note.userid,note.title,note.contents FROM note WHERE note.noteid = ` + noteID)
 
 	for noterow.Next() {
-		err = noterow.Scan(&id)
+		err = noterow.Scan(&note.NoteID, &note.Title, &note.Contents)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	return writeValue, id
+	return writeValue, note
 }
 
 func updateNoteInsertSQL(title string, contents string, noteID string) bool {
@@ -636,7 +638,6 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 	if cookie != nil {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
-		return
 	}
 
 	t, err := template.ParseFiles("entproject\\logintemplate.html")
@@ -646,33 +647,43 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		var logUser User
-		//convert input to int
-		id, err := strconv.Atoi(r.FormValue("id"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		//set input data to details
-		logUser.UserID = id
-		logUser.Password = r.FormValue("password")
-		//log.Println(logUser) //Checking
+		idvalue := r.FormValue("id")
+		passvalue := r.FormValue("password")
 
-		//if checkUserID(logUser.UserID) {
-		if checkPassword(logUser.Password, logUser.UserID) {
-			log.Println("Logged in")
-			cookie, err := r.Cookie("logged-in")
-			if err == http.ErrNoCookie {
-				cookie = &http.Cookie{
-					Name:  "logged-in",
-					Value: strconv.Itoa(logUser.UserID),
-					Path:  "/",
-				}
-			}
-			http.SetCookie(w, cookie)
-			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		if idvalue == "" || passvalue == "" {
+			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+
 		} else {
-			log.Println("Failed log in")
-			return
+			var logUser User
+			//convert input to int
+
+			id, err := strconv.Atoi(idvalue)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//set input data to details
+			logUser.UserID = id
+			logUser.Password = passvalue
+			//log.Println(logUser) //Checking
+
+			//if checkUserID(logUser.UserID) {
+			if checkPassword(logUser.Password, logUser.UserID) {
+				log.Println("Logged in")
+				cookie, err := r.Cookie("logged-in")
+				if err == http.ErrNoCookie {
+					cookie = &http.Cookie{
+						Name:  "logged-in",
+						Value: strconv.Itoa(logUser.UserID),
+						Path:  "/",
+					}
+				}
+				http.SetCookie(w, cookie)
+				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+			} else {
+				log.Println("Failed log in")
+				http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+				return
+			}
 		}
 	} else {
 		err = t.Execute(w, nil)
@@ -823,8 +834,13 @@ func shareNote(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.Method == "POST" {
-			shareNoteSQL(r.FormValue("userid"), r.FormValue("readaccess"), r.FormValue("writeaccess"), params["NoteID"])
-			http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+			if r.FormValue("userid") != "" {
+				shareNoteSQL(r.FormValue("userid"), r.FormValue("readaccess"), r.FormValue("writeaccess"), params["NoteID"])
+				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+			} else {
+				http.Redirect(w, r, "/Notes/Share/"+params["NoteID"], http.StatusSeeOther)
+			}
+
 		}
 
 		err = t.Execute(w, nil)

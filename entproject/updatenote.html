@@ -68,9 +68,9 @@
 <h1>Update Note</h1>
 <form method="POST">
     <label>Title:</label><br />
-    <input type="text" name="title"><br />
+    <input type="text" name="title" value="{{.Title}}"><br />
     <label>Content:</label><br />
-    <textarea name="content" rows="10" cols="50"></textarea><br />
+    <textarea name="content" rows="10" cols="50" >{{.Contents}}</textarea><br />
     <input type="submit" value="Update Note">
 </form>
 </body>
