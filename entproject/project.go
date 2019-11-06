@@ -209,7 +209,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
-	t, err := template.ParseFiles("entproject\\UserList.html")
+	t, err := template.ParseFiles("UserList.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -265,18 +265,27 @@ func getUsersSQL() []User {
 //Gets all user notes
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-
-	t, err := template.ParseFiles("entproject\\userhome.html")
-	if err != nil {
-		log.Fatal(err)
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
-	userNotes := getUserNotesSQL(params["UserID"])
+	if cookie.Value == params["UserID"] {
+		t, err := template.ParseFiles("userhome.html")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	err = t.Execute(w, userNotes)
-	if err != nil {
-		log.Fatal(err)
+		userNotes := getUserNotesSQL(params["UserID"])
 
+		err = t.Execute(w, userNotes)
+		if err != nil {
+			log.Fatal(err)
+
+		}
+	} else {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
 }
@@ -304,13 +313,13 @@ func getUserNotesSQL(params string) []Note {
 //Creates a note
 func createNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
-	log.Print("Cookie: ", cookie == nil)
+
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
 
-	t, err := template.ParseFiles("entproject\\createnote.html")
+	t, err := template.ParseFiles("createnote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -428,7 +437,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("entproject\\updatenote.html")
+	t, err := template.ParseFiles("updatenote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -560,22 +569,28 @@ func deleteNoteSQL(NoteID string) bool {
 
 //Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("entproject\\createaccount.html")
+	t, err := template.ParseFiles("createaccount.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 	var newUser User
 	//When submitted
 	if r.Method == "POST" {
-		newUser = createUserSQL(r.FormValue("givenName"), r.FormValue("familyName"), r.FormValue("password"))
-		t2, err := template.ParseFiles("entproject\\accountcreated.html")
-		if err != nil {
-			log.Fatal(err)
-		}
+		if r.FormValue("givenName") == "" || r.FormValue("familyName") == "" || r.FormValue("password") == "" {
+			http.Redirect(w, r, "/Users/Create", http.StatusSeeOther)
 
-		err = t2.Execute(w, newUser)
-		if err != nil {
-			log.Fatal(err)
+		} else {
+
+			newUser = createUserSQL(r.FormValue("givenName"), r.FormValue("familyName"), r.FormValue("password"))
+			t2, err := template.ParseFiles("accountcreated.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = t2.Execute(w, newUser)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	} else {
 		err = t.Execute(w, nil)
@@ -640,7 +655,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 
-	t, err := template.ParseFiles("entproject\\logintemplate.html")
+	t, err := template.ParseFiles("logintemplate.html")
 
 	if err != nil {
 		log.Fatal(err)
@@ -712,7 +727,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("entproject\\searchedNotes.html")
+	t, err := template.ParseFiles("searchedNotes.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -768,7 +783,7 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("entproject\\analyseNote.html")
+	t, err := template.ParseFiles("analyseNote.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -828,7 +843,7 @@ func shareNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isOwner(w, r) {
-		t, err := template.ParseFiles("entproject\\share.html")
+		t, err := template.ParseFiles("share.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -904,7 +919,7 @@ func access(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if isOwner(w, r) {
-		t, err := template.ParseFiles("entproject\\access.html")
+		t, err := template.ParseFiles("access.html")
 		matches := accessSQL(params["NoteID"])
 
 		err = t.Execute(w, matches)
@@ -944,7 +959,7 @@ func editAccess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isOwner(w, r) {
-		t, err := template.ParseFiles("entproject\\editaccess.html")
+		t, err := template.ParseFiles("editaccess.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1008,7 +1023,7 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("entproject\\createSharedSetting.html")
+	t, err := template.ParseFiles("createSharedSetting.html")
 	if err != nil {
 		log.Fatal(err)
 	}
