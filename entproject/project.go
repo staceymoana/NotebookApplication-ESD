@@ -50,8 +50,8 @@ type SharedSettings struct {
 	Name             string
 }
 
-var notes []Note
-var users []User
+//var notes []Note
+//var users []User
 
 var db *sql.DB
 
@@ -207,23 +207,22 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 	t, err := template.ParseFiles("entproject\\UserList.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	users := getUsersSQL()
+
 	err = t.Execute(w, users)
 	if err != nil {
 		log.Fatal(err)
-		//return "Could not select users"
 	}
-
-	//return "Users returned"
-
 }
 
-func getUsersSQL() bool {
+func getUsersSQL() []User {
 	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
 	if err != nil {
 		log.Fatal(err)
@@ -231,18 +230,15 @@ func getUsersSQL() bool {
 
 	var users []User
 	var user User
-	for rows.Next() {
 
+	for rows.Next() {
 		err = rows.Scan(&user.UserID, &user.GivenName, &user.FamilyName)
 		if err != nil {
 			log.Fatal(err)
 		}
 		users = append(users, user)
 	}
-	if len(users) == 0 {
-		return false
-	}
-	return true
+	return users
 }
 
 //Used for Postman
@@ -308,8 +304,10 @@ func getUserNotesSQL(params string) []Note {
 //Creates a note
 func createNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
+	log.Print("Cookie: ", cookie == nil)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("entproject\\createnote.html")
@@ -331,7 +329,6 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func createNoteSelectSQL(userID string) []SharedSettings {
 	var settings []SharedSettings
 	var setting SharedSettings
@@ -420,6 +417,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	writeValue, id := updateNoteSelectSQL(params["NoteID"])
@@ -443,7 +441,6 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ----------------------- NEED TO TEST --------------------------
 func updateNoteSelectSQL(noteID string) (bool, string) {
 	var writeValue bool
 	id := ""
@@ -499,6 +496,7 @@ func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return false
 	}
 
 	userValue := isOwnerSQL(params["NoteID"], cookie.Value)
@@ -534,6 +532,7 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	if isOwner(w, r) {
@@ -637,6 +636,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 	if cookie != nil {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("entproject\\logintemplate.html")
@@ -698,6 +698,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("entproject\\searchedNotes.html")
@@ -753,6 +754,7 @@ func analyseNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("entproject\\analyseNote.html")
@@ -811,6 +813,7 @@ func shareNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	if isOwner(w, r) {
@@ -918,13 +921,13 @@ func accessSQL(noteID string) []NoteAccess {
 //Allows a user to edit note access settings
 func editAccess(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	cookie := checkLoggedIn(r)
+	if cookie == nil {
+		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
+	}
 
 	if isOwner(w, r) {
-		cookie := checkLoggedIn(r)
-		if cookie == nil {
-			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
-		}
-
 		t, err := template.ParseFiles("entproject\\editaccess.html")
 		if err != nil {
 			log.Fatal(err)
@@ -986,6 +989,7 @@ func saveSharedSettingOnNote(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("entproject\\createSharedSetting.html")
@@ -1041,7 +1045,9 @@ func logOut(w http.ResponseWriter, r *http.Request) {
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
+		return
 	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:    "logged-in",
 		MaxAge:  -1,
