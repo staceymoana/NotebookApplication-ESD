@@ -108,6 +108,7 @@ func openDB() (db *sql.DB) {
 	return db
 }
 
+//Connects to database and creates database tables if they dont already exist
 func setupDB() *sql.DB {
 	//Open db from setupDB file
 	db = openDB()
@@ -201,19 +202,21 @@ func setupDB() *sql.DB {
 	json.NewEncoder(w).Encode(notes)
 }*/
 
-//Gets all users
-
+//Displays a list of all users within the database and their details
 func getUsers(w http.ResponseWriter, r *http.Request) {
+	//check if the user is logged in
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
+	//User List template
 	t, err := template.ParseFiles("templates\\UserList.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	//gets user list from database
 	users := getUsersSQL()
 
 	err = t.Execute(w, users)
@@ -222,6 +225,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Gets a list of all users within the database and their details
 func getUsersSQL() []User {
 	rows, err := db.Query(`SELECT userID, givenName, familyName FROM "User"`)
 	if err != nil {
@@ -231,11 +235,13 @@ func getUsersSQL() []User {
 	var users []User
 	var user User
 
+	//put sql data into object
 	for rows.Next() {
 		err = rows.Scan(&user.UserID, &user.GivenName, &user.FamilyName)
 		if err != nil {
 			log.Fatal(err)
 		}
+		//adds each user to user lsit
 		users = append(users, user)
 	}
 	return users
@@ -265,18 +271,19 @@ func getUsersSQL() []User {
 //Gets all user notes
 func getUserNotes(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	//Checks if the user is logged in
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
-
+	//checks the users id to the given route
 	if cookie.Value == params["UserID"] {
 		t, err := template.ParseFiles("templates\\userhome.html")
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		//gets a list of users notes from database
 		userNotes := getUserNotesSQL(params["UserID"])
 
 		err = t.Execute(w, userNotes)
@@ -285,11 +292,13 @@ func getUserNotes(w http.ResponseWriter, r *http.Request) {
 
 		}
 	} else {
+		//if they are trying to go to another users notes then redirect them to log in
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 	}
 
 }
 
+//gets a list of users notes from database where the are either the owner or have read permission
 func getUserNotesSQL(params string) []Note {
 	rows, err := db.Query(`SELECT DISTINCT note.noteid,note.userid,note.title,note.contents,note.datecreated,note.dateupdated FROM note LEFT JOIN noteaccess ON note.noteid = noteaccess.noteid WHERE note.userid = ` + params + ` OR (noteaccess.userid = ` + params + ` AND noteaccess.read = true)`)
 	if err != nil {
@@ -300,11 +309,12 @@ func getUserNotesSQL(params string) []Note {
 	var note Note
 
 	for rows.Next() {
-
+		//put sql data into object
 		err = rows.Scan(&note.NoteID, &note.UserID, &note.Title, &note.Contents, &note.DateCreated, &note.DateUpdated)
 		if err != nil {
 			log.Fatal(err)
 		}
+		//adds each note to userNotes
 		userNotes = append(userNotes, note)
 	}
 	return userNotes
@@ -312,8 +322,8 @@ func getUserNotesSQL(params string) []Note {
 
 //Creates a note
 func createNote(w http.ResponseWriter, r *http.Request) {
+	//checks if user is logged in
 	cookie := checkLoggedIn(r)
-
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
@@ -323,9 +333,10 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//gets saved select settings for owner
 	settings := createNoteSelectSQL(cookie.Value)
 
+	//inserts the new note with the given form data then redirects back to user home page
 	if r.Method == "POST" {
 		createNoteInsertSQL(cookie.Value, r.FormValue("title"), r.FormValue("content"), r.FormValue("settingSelect"))
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
@@ -338,6 +349,7 @@ func createNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//gets saved select settings for owner
 func createNoteSelectSQL(userID string) []SharedSettings {
 	var settings []SharedSettings
 	var setting SharedSettings
@@ -348,15 +360,18 @@ func createNoteSelectSQL(userID string) []SharedSettings {
 	}
 
 	for rows.Next() {
+		//put sql data into object
 		err = rows.Scan(&setting.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
+		//add each setting to settings
 		settings = append(settings, setting)
 	}
 	return settings
 }
 
+//Inserts the given note data into the note table. Return true if successful
 func createNoteInsertSQL(userID string, title string, content string, selectSetting string) bool {
 	var newNote Note
 	var err error
@@ -372,6 +387,7 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 	newNote.DateUpdated = date
 
 	//Prepare query
+	////Inserts the given note data into the note table
 	query := `INSERT INTO Note (UserID, Title, Contents, DateCreated, DateUpdated) VALUES ($1, $2, $3, $4, $5) RETURNING NoteID;`
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -390,7 +406,7 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 	selectedSetting := selectSetting
 
 	var setting SharedSettings
-
+	//sets given shared setting onto the note
 	rows, err := db.Query(`SELECT SharedSettings.SharedUserID, SharedSettings.Read, SharedSettings.Write FROM SharedSettings WHERE OwnerID = ` + userID + `AND SharedSettings.Name = '` + selectedSetting + `'`)
 	if err != nil {
 		log.Fatal(err)
@@ -402,7 +418,7 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 			log.Fatal(err)
 			return false
 		}
-		//settings = append(settings, setting)
+		//creates the note access for the new note using the shared settings permissions
 		query := `INSERT INTO NoteAccess (NoteID, UserID, Read, Write) VALUES ($1, $2, $3, $4)`
 		stmt, err := db.Prepare(query)
 		if err != nil {
@@ -419,20 +435,21 @@ func createNoteInsertSQL(userID string, title string, content string, selectSett
 	return true
 }
 
-//Updates a note
+//Edits the notes title and content based on the given form input
 func updateNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
+	//checks if the user is logged in
 	cookie := checkLoggedIn(r)
-
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
-
+	//gets the users writevalue and gets the orignal note
 	writeValue, note := updateNoteSelectSQL(params["NoteID"])
 	id := strconv.Itoa(note.NoteID)
 
+	//if they dont have write permission then redirect them to user home
 	if id != cookie.Value && writeValue == false {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
@@ -441,7 +458,7 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//updates the note with the given form values
 	if r.Method == "POST" {
 		updateNoteInsertSQL(r.FormValue("title"), r.FormValue("content"), params["NoteID"])
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
@@ -452,10 +469,11 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//get the writevalue from the user and the orignal note
 func updateNoteSelectSQL(noteID string) (bool, Note) {
 	var writeValue bool
 	var note Note
-
+	//gets the users writevalue
 	rows, err := db.Query(`SELECT noteaccess.write From Noteaccess WHERE noteaccess.noteid = ` + noteID)
 	if err != nil {
 		log.Fatal(err)
@@ -467,7 +485,7 @@ func updateNoteSelectSQL(noteID string) (bool, Note) {
 			log.Fatal(err)
 		}
 	}
-
+	//gets the orignal note
 	noterow, err := db.Query(`SELECT note.userid,note.title,note.contents FROM note WHERE note.noteid = ` + noteID)
 
 	for noterow.Next() {
@@ -479,12 +497,13 @@ func updateNoteSelectSQL(noteID string) (bool, Note) {
 	return writeValue, note
 }
 
+//updates the note with the given form values
 func updateNoteInsertSQL(title string, contents string, noteID string) bool {
 	var newNote Note
-
 	newNote.Title = title
 	newNote.Contents = contents
 
+	//updates note with new values
 	query := `UPDATE Note SET title = $1, contents = $2, dateupdated = $3 WHERE Note.noteid =` + noteID
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -504,21 +523,24 @@ func updateNoteInsertSQL(title string, contents string, noteID string) bool {
 //Checks whether user logged in is the owner
 func isOwner(w http.ResponseWriter, r *http.Request) bool {
 	params := mux.Vars(r)
+	//checks if user is logged in
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return false
 	}
-
+	//get the userid for a note
 	userValue := isOwnerSQL(params["NoteID"], cookie.Value)
 
 	if strconv.Itoa(userValue) != cookie.Value {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 		return false
 	}
+	//returns true if owner
 	return true
 }
 
+//gets the userid for a note
 func isOwnerSQL(noteID string, userID string) int {
 	var userValue int
 
@@ -528,7 +550,7 @@ func isOwnerSQL(noteID string, userID string) int {
 	}
 
 	for rows.Next() {
-
+		//put sql data into object
 		err = rows.Scan(&userValue)
 		if err != nil {
 			log.Fatal(err)
@@ -540,25 +562,29 @@ func isOwnerSQL(noteID string, userID string) int {
 //Deletes a note
 func deleteNote(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
+	//checks if user is logged in
 	cookie := checkLoggedIn(r)
 	if cookie == nil {
 		http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 		return
 	}
-
+	//checks if the user is the onwer of the note before deleting it
 	if isOwner(w, r) {
+		//deletes given note
 		deleteNoteSQL(params["NoteID"])
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
 }
 
+//deletes given note
 func deleteNoteSQL(NoteID string) bool {
+	//first delets the note access for the note
 	_, err := db.Exec(`DELETE FROM NoteAccess WHERE NoteAccess.noteid = ` + NoteID)
 	if err != nil {
 		log.Fatal(err)
 		return false
 	}
-
+	//deletes the note
 	_, err = db.Exec(`DELETE FROM note WHERE note.noteid = ` + NoteID)
 	if err != nil {
 		log.Fatal(err)
@@ -574,13 +600,14 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var newUser User
-	//When submitted
+	//When account data submitted
 	if r.Method == "POST" {
+		//if they dont enter all data then send them back to create account
 		if r.FormValue("givenName") == "" || r.FormValue("familyName") == "" || r.FormValue("password") == "" {
 			http.Redirect(w, r, "/Users/Create", http.StatusSeeOther)
 
 		} else {
-
+			//creates the user from the given form data
 			newUser = createUserSQL(r.FormValue("givenName"), r.FormValue("familyName"), r.FormValue("password"))
 			t2, err := template.ParseFiles("templates\\accountcreated.html")
 			if err != nil {
@@ -600,6 +627,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//creates a new user in the database from the given data
 func createUserSQL(givenName string, familyName string, password string) User {
 	var newUser User
 	//Assign input values to newUser
@@ -608,6 +636,7 @@ func createUserSQL(givenName string, familyName string, password string) User {
 	newUser.Password = password
 
 	//Prepare query to insert into DB
+	//inserts new user
 	query := `INSERT INTO "User" (GivenName, FamilyName, Password) VALUES ($1, $2, $3) RETURNING UserID;`
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -649,8 +678,8 @@ func checkPassword(password string, userID int) bool {
 
 //Logs a user in
 func logIn(w http.ResponseWriter, r *http.Request) {
+	//checks if a user is already logged in
 	cookie := checkLoggedIn(r)
-
 	if cookie != nil {
 		http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 	}
@@ -660,11 +689,11 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//submitted log in data
 	if r.Method == "POST" {
 		idvalue := r.FormValue("id")
 		passvalue := r.FormValue("password")
-
+		//if they dont enter both userid and password then redircts back to log in
 		if idvalue == "" || passvalue == "" {
 			http.Redirect(w, r, "/Users/LogIn", http.StatusSeeOther)
 
@@ -678,8 +707,9 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 			//set input data to details
 			logUser.UserID = id
 			logUser.Password = passvalue
-
+			//checks if the password matches the userid
 			if checkPassword(logUser.Password, logUser.UserID) {
+				//creates logged-in cookie that stores the userid
 				cookie, err := r.Cookie("logged-in")
 				if err == http.ErrNoCookie {
 					cookie = &http.Cookie{
@@ -688,6 +718,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 						Path:  "/",
 					}
 				}
+				//sets cookie and redirects to user home
 				http.SetCookie(w, cookie)
 				http.Redirect(w, r, "/Users/Notes/"+cookie.Value, http.StatusSeeOther)
 			} else {
@@ -704,7 +735,7 @@ func logIn(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//Checks whether a user is logged in
+//Checks whether a user is logged in and returns the cookie
 func checkLoggedIn(r *http.Request) *http.Cookie {
 	cookie, err := r.Cookie("logged-in")
 	if err == http.ErrNoCookie {
