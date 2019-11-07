@@ -4,6 +4,7 @@
 ___
 
 **1.** Install PostgreSQL if you don't already have it installed
+
 **2.** Open PostgreSQL and create a new database called “EnterpriseNoteApp”
 
 ![PostgreSQL Image](https://github.com/staceysike/entproject/blob/master/images/postgres.jpg "PostgreSQL Image")
