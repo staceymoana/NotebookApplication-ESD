@@ -68,7 +68,7 @@ func TestDatabase(t *testing.T) {
 }
 
 func TestCheckPassword(t *testing.T) {
-	pass := "123"
+	pass := "password"
 	id := 1
 
 	expected := true
@@ -76,21 +76,5 @@ func TestCheckPassword(t *testing.T) {
 
 	if observed != expected {
 		t.Errorf("Expected true but returned false")
-	}
-}
-
-func TestIsOwner(t *testing.T) {
-	result := isOwner(w, r)
-
-	if result == false {
-		t.Errorf("Is not owner")
-	}
-}
-
-func TestSetupDB(t *testing.T) {
-	result := setupDB()
-
-	if result == nil {
-		t.Errorf("Database is nil")
 	}
 }
