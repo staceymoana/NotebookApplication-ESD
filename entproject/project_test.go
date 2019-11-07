@@ -1,21 +1,17 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var w http.ResponseWriter
-var r *http.Request
+// --------------------------- Router Tests are found in Router Test.side file located in GitHub and submission ---------------------------
 
 func TestMain(m *testing.M) {
-	// call flag.Parse() here if TestMain uses flags
 	setupDB()
 	os.Exit(m.Run())
-
 }
 
 func TestDatabase(t *testing.T) {

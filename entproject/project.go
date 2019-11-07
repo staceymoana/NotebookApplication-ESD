@@ -148,8 +148,8 @@ func setupDB() *sql.DB {
 		Write bool,
 		Name VARCHAR(30),
 		FOREIGN KEY (OwnerID) REFERENCES "User"(UserID)
-		
 	);`
+
 	//Execute queries
 	_, err := db.Exec(createUserTableQuery)
 	if err != nil {
