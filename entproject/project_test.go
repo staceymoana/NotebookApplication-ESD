@@ -2,8 +2,8 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,67 +14,56 @@ var r *http.Request
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
 	setupDB()
-	//os.Exit(m.Run())
+	os.Exit(m.Run())
 
 }
 
 func TestDatabase(t *testing.T) {
-	var user User
-	user.UserID = 100
-	user.GivenName = "John"
-	user.FamilyName = "Snow"
-	user.Password = "hello123"
-
-	var userTwo User
-	userTwo.UserID = 101
-	userTwo.GivenName = "Bob"
-	userTwo.FamilyName = "Ross"
-	userTwo.Password = "password"
-
-	var note Note
-	note.NoteID = 100
-	note.UserID = 100
-	note.Title = "my note"
-	note.Contents = "hi this is a note"
-	note.DateCreated = time.Now()
-	note.DateUpdated = time.Now()
-
-	var noteAccess NoteAccess
-	noteAccess.NoteAccessID = 100
-	noteAccess.NoteID = 100
-	noteAccess.UserID = 101
-	noteAccess.Read = true
-	noteAccess.Write = true
 
 	db := setupDB()
 
-	if db != nil {
-		//assert.Equal(t, "Users returned", getUsers(w, r), "Should return 'Users returned'")
-		assert.NotNil(t, getUsersSQL(), "Should return a list of users")
-		userNotes := getUserNotesSQL("10")
-		assert.NotEmpty(t, userNotes, "Should not be empty")
-
-		assert.True(t, updateNoteInsertSQL("Updated title", "Updated contents", "1"))
+	if assert.NotNil(t, db) {
+		//getUsersSQL() gets existing users from the database and returns them
+		assert.NotNil(t, getUsersSQL(), "getUsersSQL() should return a list of users")
+		//getUserNotesSQL() gets notes from the given user using their UserID and returns them
+		userNotes := getUserNotesSQL("1")
+		assert.NotEmpty(t, userNotes, "getUserNotesSQL() should not be empty")
+		//updateNoteInsertSQL() updates a note based on input and returns true if sucessful
+		assert.True(t, updateNoteInsertSQL("Updated title", "Updated contents", "1"), "updateNoteInsertSQL() should return true")
+		//isOwnerSQL() checks if logged in user is the owner of a note and returns the ownerID
 		ownerID := isOwnerSQL("1", "1")
-		assert.NotZero(t, ownerID, "Should not be zero")
-		assert.True(t, deleteNoteSQL("2"), "Should be true")
+		assert.NotZero(t, ownerID, "isOwnerSQL() should not return zero")
+		//deleteNoteSQL() deletes a note based on a given NoteID returns true if sucessful
+		assert.True(t, deleteNoteSQL("2"), "deleteNoteSQL() should return true")
+		//createUserSQL() creates a new user based on input and returns the user
 		newUser := createUserSQL("New", "User", "password")
-		assert.NotNil(t, newUser, "Should return a user")
+		assert.NotNil(t, newUser, "createUserSQL() should return a user")
+		//searchSQL() searches a note based on input on a given NoteID, returns array of notes containing input
 		searchedNotes := searchSQL("content", "1")
-		assert.NotEmpty(t, searchedNotes, "Should not be empty")
+		assert.NotEmpty(t, searchedNotes, "searchedNotes() should not be empty")
+		//analyseNoteSQL() analyses a note based on input on a given NoteID and returns a count
 		newAnalyseNote := analyseNoteSQL("content", "1")
-		assert.NotZero(t, newAnalyseNote, "Should not be zero")
-		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "Should be true")
+		assert.NotZero(t, newAnalyseNote, "analyseNoteSQL() should not return zero")
+		//shareNoteSQL() shares a note based on input and returns true if sucessful
+		assert.True(t, shareNoteSQL("1", "on", "on", "4"), "shareNoteSQL() should return true")
+		//accessSQL() gets existing access and returns them
 		newAccess := accessSQL("1")
-		assert.NotEmpty(t, newAccess, "Should not be empty")
-		assert.True(t, editAccessSQL("on", "on", "4"), "Should be true")
-		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "Should be true")
+		assert.NotEmpty(t, newAccess, "accessSQL() should not be empty")
+		//editAccessSQL() edits an access setting and returns true if successful
+		assert.True(t, editAccessSQL("on", "on", "4"), "editAccessSQL() should return true")
+		//saveSharedSettingOnNoteSQL() saves shared settings based on input and NoteID and returns true if successful
+		assert.True(t, saveSharedSettingOnNoteSQL("test", "400"), "saveSharedSettingOnNoteSQL() should return true")
+		//createNoteSelectSQL() returns the SharedSettings based on logged in user and returns them as array
 		settings := createNoteSelectSQL("1")
-		assert.NotEmpty(t, settings, "Should not be empty")
-		assert.True(t, createNoteInsertSQL("1", "test title", "test contents", "none"), "Should be true")
+		assert.NotEmpty(t, settings, "createNoteSelectSQL() should not be empty")
+		//createNoteInsertSQL() creates a new note and returns true if successful
+		assert.True(t, createNoteInsertSQL("1", "test title", "test contents", "none"), "createNoteInsertSQL() should return true")
+		//updateNoteSelectSQL() updates a note based on a NoteID
 		writevalue, id := updateNoteSelectSQL("1")
-		assert.True(t, writevalue, "should be true")
-		assert.NotEqual(t, "", id, "id should not be empty")
+		//returns true if successfully updated
+		assert.True(t, writevalue, "updateNoteSelectSQL() writevalue should return true")
+		//check if id is not empty
+		assert.NotEqual(t, "", id, "updateNoteSelectSQL() id should not be empty")
 	}
 }
 

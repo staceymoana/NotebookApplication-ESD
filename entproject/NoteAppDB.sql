@@ -56,4 +56,8 @@ INSERT INTO Note VALUES
 
 INSERT INTO NoteAccess VALUES
 	(DEFAULT, 1, 2, true, true),
-	(DEFAULT, 1, 3, true, false);
+	(DEFAULT, 1, 3, true, true);
+
+INSERT INTO SharedSettings VALUES
+	(DEFAULT, 1, 2, true, true, 'SharedSettings Test'),
+	(DEFAULT, 1, 3, true, true, 'SharedSettings Test');
