@@ -569,7 +569,7 @@ func deleteNoteSQL(NoteID string) bool {
 
 //Creates a new user
 func createUser(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("createaccount.html")
+	t, err := template.ParseFiles("templates\\createaccount.html")
 	if err != nil {
 		log.Fatal(err)
 	}
