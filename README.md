@@ -11,6 +11,8 @@ ___
 
 **3.** If using for testing purposes then find the NoteAppDB.sql and copy its contents. Open the query tool in postgreSQL and paste the contents. Run the query.
 
+![PostgreSQL Insert Image](https://github.com/staceysike/entproject/blob/master/images/Insert.jpg "PostgreSQL Insert Image")
+
 **4.** Navigate to entproject folder and run "entproject.exe"
 
 ![Folder Image](https://github.com/staceysike/entproject/blob/master/images/openexe.jpg "Folder Image")
